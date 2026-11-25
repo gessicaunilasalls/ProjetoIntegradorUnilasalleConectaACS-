@@ -1,0 +1,2750 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CONECTA ACS — Apoio ao Registro e Sincronização</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Fonte Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            abBlue: '#1557B0',
+            abBlueDark: '#0E3A5D',
+            abBlueLight: '#E8F1FC',
+            abBg: '#F3F5F8',
+            abLoginBg: '#EBF3FA',
+            abGreen: '#2BAE66',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Ajustes visuais e transições suaves */
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #F3F5F8;
+      overflow-x: hidden;
+    }
+    html.dark body {
+      background-color: #0f172a;
+    }
+    html.text-lg-mode {
+      font-size: 112%;
+    }
+    html.text-sm-mode {
+      font-size: 92%;
+    }
+    .chat-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .chat-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .chat-scroll::-webkit-scrollbar-thumb {
+      background: rgba(14, 58, 93, 0.25);
+      border-radius: 9999px;
+    }
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); opacity: 0.9; }
+      50% { transform: scale(1.04); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.9; }
+    }
+    .logo-pulse {
+      animation: pulseRing 1.6s infinite ease-in-out;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff !important; }
+    }
+  </style>
+</head>
+<body class="text-slate-800 dark:text-slate-100 transition-colors duration-200 min-h-screen flex flex-col">
+
+  <!-- TOAST / FEEDBACK VISUAL GLOBAL (Substitui alert/confirm) -->
+  <div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- MODAL GENÉRICO DE CONFIRMAÇÃO / DETALHES -->
+  <div id="app-modal" class="fixed inset-0 z-[9990] hidden items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-700 animate-fade-in">
+      <div class="bg-[#1557B0] text-white px-5 py-4 flex items-center justify-between">
+        <h3 id="modal-title" class="font-bold text-base">Título</h3>
+        <button onclick="closeModal()" class="p-1.5 rounded-lg hover:bg-white/20 transition" aria-label="Fechar modal">✕</button>
+      </div>
+      <div id="modal-body" class="p-5 text-sm text-slate-700 dark:text-slate-200 max-h-[70vh] overflow-y-auto space-y-3"></div>
+      <div id="modal-footer" class="px-5 py-3.5 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2"></div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       1. TELA DE LOGIN (FUNDO #EBF3FA, SEM DICAS DE CREDENCIAIS, SEM VOLTAR)
+       ===================================================================== -->
+  <section id="screen-login" class="min-h-screen w-full bg-[#EBF3FA] dark:bg-slate-900 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-xl border border-slate-200/80 dark:border-slate-700 p-6 sm:p-8">
+      <!-- Logotipo SVG Oficial Conecta ACS -->
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="w-24 h-24 rounded-2xl bg-[#EBF3FA] dark:bg-slate-700/60 flex items-center justify-center mb-3 shadow-inner">
+          <svg viewBox="0 0 120 120" class="w-20 h-20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Logotipo Conecta ACS">
+            <!-- Ondas de conexão -->
+            <path d="M22 44C32 30 45 24 60 24C75 24 88 30 98 44" stroke="#2BAE66" stroke-width="4" stroke-linecap="round"/>
+            <path d="M31 51C39 40 49 35 60 35C71 35 81 40 89 51" stroke="#1557B0" stroke-width="3.5" stroke-linecap="round"/>
+            <!-- Casa -->
+            <path d="M28 62L60 38L92 62V94C92 97.3137 89.3137 100 86 100H34C30.6863 100 28 97.3137 28 94V62Z" fill="#0E3A5D"/>
+            <path d="M22 64L60 35L98 64" stroke="#1557B0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Cruz Médica -->
+            <rect x="55" y="50" width="10" height="24" rx="2" fill="#2BAE66"/>
+            <rect x="48" y="57" width="24" height="10" rx="2" fill="#2BAE66"/>
+            <!-- Pessoas conectadas na base -->
+            <circle cx="43" cy="81" r="5" fill="#FFFFFF"/>
+            <path d="M35 95C35 90.5 38.5 88 43 88C47.5 88 51 90.5 51 95" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="60" cy="79" r="5.5" fill="#2BAE66"/>
+            <path d="M51 95C51 90 55 87 60 87C65 87 69 90 69 95" stroke="#2BAE66" stroke-width="3.2" stroke-linecap="round"/>
+            <circle cx="77" cy="81" r="5" fill="#FFFFFF"/>
+            <path d="M69 95C69 90.5 72.5 88 77 88C81.5 88 85 90.5 85 95" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-extrabold tracking-tight text-[#0E3A5D] dark:text-white">CONECTA ACS</h1>
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">Plataforma de Apoio ao Registro e Sincronização</p>
+      </div>
+
+      <!-- Mensagem de erro de login -->
+      <div id="login-error-box" class="hidden mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-bold text-center tracking-wide">
+        LOGIN/SENHA INCORRETOS. TENTE NOVAMENTE.
+      </div>
+
+      <!-- Formulário de Login (Sem dicas ou placeholders que revelem login/senha) -->
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4" autocomplete="off">
+        <div>
+          <label for="login-user" class="block text-xs font-bold text-[#0E3A5D] dark:text-slate-300 uppercase tracking-wider mb-1.5">LOGIN</label>
+          <input id="login-user" type="text" required class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1557B0] text-sm" />
+        </div>
+
+        <div>
+          <label for="login-pass" class="block text-xs font-bold text-[#0E3A5D] dark:text-slate-300 uppercase tracking-wider mb-1.5">SENHA</label>
+          <div class="relative">
+            <input id="login-pass" type="password" required class="w-full px-4 py-3 pr-12 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1557B0] text-sm" />
+            <button type="button" onclick="togglePasswordVisibility('login-pass', 'login-eye-icon')" class="absolute inset-y-0 right-0 px-3.5 flex items-center text-slate-500 hover:text-[#1557B0]" aria-label="Exibir ou ocultar senha">
+              <span id="login-eye-icon">👁️</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+            <input id="login-remember" type="checkbox" class="w-4 h-4 rounded text-[#1557B0] focus:ring-[#1557B0] border-slate-300" />
+            <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">LEMBRAR DE MIM</span>
+          </label>
+          <button type="button" onclick="navigateScreen('screen-recovery')" class="text-xs font-bold text-[#1557B0] dark:text-blue-400 hover:underline">
+            ESQUECEU SENHA?
+          </button>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 rounded-xl bg-[#1557B0] hover:bg-[#0E3A5D] text-white font-bold text-sm tracking-wide shadow-md hover:shadow-lg transition cursor-pointer">
+          ENTRAR
+        </button>
+      </form>
+
+      <div class="mt-5 pt-5 border-t border-slate-200 dark:border-slate-700">
+        <button type="button" onclick="navigateScreen('screen-register')" class="w-full py-3 rounded-xl border-2 border-[#2BAE66] text-[#2BAE66] hover:bg-[#2BAE66] hover:text-white font-bold text-xs tracking-wider transition cursor-pointer">
+          CRIAR NOVA CONTA
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       2. TELA DE RECUPERAÇÃO DE SENHA
+       ===================================================================== -->
+  <section id="screen-recovery" class="hidden min-h-screen w-full bg-[#EBF3FA] dark:bg-slate-900 items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 sm:p-8">
+      <div class="flex items-center justify-between mb-5">
+        <button type="button" onclick="navigateScreen('screen-login')" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-xs font-bold text-[#0E3A5D] dark:text-white transition">
+          ← VOLTAR
+        </button>
+        <span class="text-xs font-bold text-[#1557B0] uppercase">CONECTA ACS</span>
+      </div>
+
+      <h2 class="text-xl font-extrabold text-[#0E3A5D] dark:text-white mb-2">RECUPERAÇÃO DE SENHA</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">Informe seu usuário e e-mail institucional cadastrado para receber instruções de redefinição.</p>
+
+      <form id="recovery-form" onsubmit="handleRecovery(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-[#0E3A5D] dark:text-slate-300 uppercase mb-1.5">USUÁRIO</label>
+          <input id="rec-user" type="text" required class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm focus:ring-2 focus:ring-[#1557B0] outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-[#0E3A5D] dark:text-slate-300 uppercase mb-1.5">E-MAIL INSTITUCIONAL CADASTRADO</label>
+          <input id="rec-email" type="email" required class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm focus:ring-2 focus:ring-[#1557B0] outline-none" />
+        </div>
+        <button type="submit" class="w-full py-3.5 rounded-xl bg-[#1557B0] hover:bg-[#0E3A5D] text-white font-bold text-sm transition shadow-md">
+          CONFIRMAR
+        </button>
+      </form>
+
+      <!-- Resultado neutro + simulação de redefinição -->
+      <div id="recovery-result" class="hidden mt-5 p-4 rounded-2xl bg-blue-50 dark:bg-slate-700/80 border border-blue-200 dark:border-slate-600 space-y-3">
+        <p class="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">
+          Se os dados informados corresponderem a uma conta ativa na plataforma, um link seguro de redefinição foi enviado para o e-mail institucional cadastrado.
+        </p>
+        <button type="button" onclick="openSimulateResetModal()" class="w-full py-2.5 rounded-xl bg-[#2BAE66] hover:bg-emerald-700 text-white font-bold text-xs transition">
+          SIMULAR REDEFINIÇÃO DE SENHA
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       3. TELA DE CRIAÇÃO DE CONTA ('INFORMAÇÕES DO PERFIL')
+       ===================================================================== -->
+  <section id="screen-register" class="hidden min-h-screen w-full bg-[#EBF3FA] dark:bg-slate-900 py-6 px-4">
+    <div class="max-w-3xl mx-auto bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 sm:p-8">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4 mb-6">
+        <button type="button" onclick="navigateScreen('screen-login')" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-xs font-bold text-[#0E3A5D] dark:text-white transition">
+          ← VOLTAR
+        </button>
+        <div class="text-right">
+          <h2 class="text-lg sm:text-xl font-extrabold text-[#0E3A5D] dark:text-white">INFORMAÇÕES DO PERFIL</h2>
+          <p class="text-xs text-slate-500">Solicitação de Cadastro Institucional — CONECTA ACS</p>
+        </div>
+      </div>
+
+      <!-- Formulário Completo -->
+      <form id="register-form" onsubmit="handleRegisterSubmit(event)" class="space-y-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nome Completo *</label>
+            <input id="reg-fullname" type="text" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Usuário (máx. 15 caracteres) *</label>
+            <input id="reg-username" type="text" maxlength="15" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Gênero *</label>
+            <select id="reg-gender" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+              <option value="">Selecione...</option>
+              <option value="Feminino">Feminino</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Não-binário">Não-binário</option>
+              <option value="Prefiro não informar">Prefiro não informar</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">CPF (11 dígitos) *</label>
+            <input id="reg-cpf" type="text" pattern="\d{11}" maxlength="11" inputmode="numeric" required placeholder="Somente números" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">RG / RNE *</label>
+            <input id="reg-rg" type="text" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nome da Mãe *</label>
+            <input id="reg-mother" type="text" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nome do Pai (opcional)</label>
+            <input id="reg-father" type="text" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <!-- Data de Nascimento Dia/Mês/Ano -->
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Data de Nascimento *</label>
+            <div class="grid grid-cols-3 gap-2">
+              <select id="reg-dob-day" required class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm"></select>
+              <select id="reg-dob-month" required class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+                <option value="">Mês</option>
+                <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+                <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+                <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+                <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+              </select>
+              <select id="reg-dob-year" required class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm"></select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nacionalidade *</label>
+            <select required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+              <option value="Brasileiro">Brasileiro</option>
+              <option value="Estrangeiro">Estrangeiro</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Naturalidade *</label>
+            <input type="text" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">País de Origem *</label>
+            <input type="text" value="Brasil" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">CEP *</label>
+            <input type="text" required placeholder="00000-000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Endereço *</label>
+            <input type="text" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Estado *</label>
+            <select required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+              <option value="RJ">Rio de Janeiro (RJ)</option>
+              <option value="SP">São Paulo (SP)</option>
+              <option value="MG">Minas Gerais (MG)</option>
+              <option value="ES">Espírito Santo (ES)</option>
+              <option value="Outro">Outro Estado</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Cidade *</label>
+            <input type="text" value="Duque de Caxias" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">E-mail Institucional *</label>
+            <input id="reg-email" type="email" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Cargo / Função *</label>
+            <select id="reg-role" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+              <option value="Agente Comunitário de Saúde (ACS)">Agente Comunitário de Saúde (ACS)</option>
+              <option value="Agente de Combate às Endemias (ACE)">Agente de Combate às Endemias (ACE)</option>
+              <option value="Enfermeiro(a) ESF">Enfermeiro(a) ESF</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Unidade de Saúde *</label>
+            <select id="reg-unit" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+              <option value="Unidade de Saúde Básica Pantanal">Unidade de Saúde Básica Pantanal</option>
+              <option value="Clínica da Família Pantanal Sossego">Clínica da Família Pantanal Sossego</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Equipe *</label>
+              <select id="reg-team" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+                <option value="EQUIPE 1">EQUIPE 1</option>
+                <option value="EQUIPE 2">EQUIPE 2</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Microárea *</label>
+              <select id="reg-microarea" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+                <option value="MICROAREA 1">MICROAREA 1</option>
+                <option value="MICROAREA 2">MICROAREA 2</option>
+                <option value="MICROAREA 3">MICROAREA 3</option>
+                <option value="MICROAREA 4">MICROAREA 4</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Telefone</label>
+            <input type="tel" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Celular *</label>
+            <input type="tel" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Senha (6 a 12 caracteres) *</label>
+            <input id="reg-pass" type="password" minlength="6" maxlength="12" required oninput="validateRegisterPasswords()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Confirme a Senha *</label>
+            <input id="reg-pass-confirm" type="password" minlength="6" maxlength="12" required oninput="validateRegisterPasswords()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+            <p id="reg-pass-feedback" class="text-[11px] mt-1 font-semibold"></p>
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Código Institucional (8 caracteres — ex.: 20262551)</label>
+            <input value="20262551" placeholder="20262551" id="reg-code" type="text" minlength="8" maxlength="8" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm uppercase tracking-widest" />
+          </div>
+        </div>
+
+        <!-- Checkboxes obrigatórios -->
+        <div class="space-y-2.5 pt-2 border-t border-slate-200 dark:border-slate-700">
+          <label class="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+            <input type="checkbox" required class="mt-0.5 w-4 h-4 rounded text-[#1557B0]" />
+            <span>Declaro que li e concordo com os <strong>Termos de Uso</strong> da plataforma CONECTA ACS.</span>
+          </label>
+          <label class="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+            <input type="checkbox" required class="mt-0.5 w-4 h-4 rounded text-[#1557B0]" />
+            <span>Autorizo o tratamento dos dados institucionais conforme a <strong>Política de Privacidade e LGPD</strong>.</span>
+          </label>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 rounded-xl bg-[#2BAE66] hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition">
+          CRIAR NOVA CONTA
+        </button>
+      </form>
+
+      <!-- Confirmação Pós-Envio -->
+      <div id="register-success" class="hidden text-center py-8 space-y-4">
+        <div id="register-status-badge" class="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-3xl">⏳</div>
+        <h3 id="register-status-heading" class="text-xl font-extrabold text-[#0E3A5D] dark:text-white">CADASTRO PENDENTE DE APROVAÇÃO</h3>
+        <p id="register-success-detail" class="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
+          Sua solicitação de conta institucional foi registrada com sucesso e encaminhada para validação da coordenação da unidade de saúde.
+        </p>
+        <div id="register-pending-sim-actions" class="max-w-sm mx-auto pt-1">
+          <button type="button" id="btn-simulate-approve" onclick="simulateApproveCreatedAccount()" class="w-full py-2.5 px-4 rounded-xl bg-[#2BAE66] hover:bg-emerald-700 text-white font-bold text-xs tracking-wider transition cursor-pointer">
+            SIMULAR APROVAÇÃO ADMINISTRATIVA
+          </button>
+        </div>
+        <button type="button" onclick="resetAndBackToLogin()" class="px-6 py-3 rounded-xl bg-[#1557B0] hover:bg-[#0E3A5D] text-white font-bold text-xs tracking-wider transition cursor-pointer">
+          VOLTAR PARA A TELA DE LOGIN
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       4. TELA DE CARREGAMENTO (~1.5 SEGUNDOS)
+       ===================================================================== -->
+  <section id="screen-loading" class="hidden fixed inset-0 z-50 bg-[#1557B0] text-white flex-col items-center justify-center p-6">
+    <div class="w-28 h-28 rounded-3xl bg-white/15 backdrop-blur-xs flex items-center justify-center mb-6 logo-pulse shadow-2xl">
+      <svg viewBox="0 0 120 120" class="w-20 h-20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 44C32 30 45 24 60 24C75 24 88 30 98 44" stroke="#2BAE66" stroke-width="5" stroke-linecap="round"/>
+        <path d="M28 62L60 38L92 62V94C92 97.3 89.3 100 86 100H34C30.7 100 28 97.3 28 94V62Z" fill="#FFFFFF"/>
+        <rect x="55" y="52" width="10" height="24" rx="2" fill="#2BAE66"/>
+        <rect x="48" y="59" width="24" height="10" rx="2" fill="#2BAE66"/>
+      </svg>
+    </div>
+    <p class="text-lg sm:text-xl font-extrabold tracking-[0.25em] uppercase">CARREGANDO...</p>
+  </section>
+
+  <!-- =====================================================================
+       5. APLICAÇÃO PRINCIPAL (CABEÇALHO + MENU LATERAL + TELAS INTERNAS)
+       ===================================================================== -->
+  <div id="app-shell" class="hidden flex-col min-h-screen w-full">
+
+    <!-- MENU LATERAL HAMBÚRGUER (DRAWER) -->
+    <div id="drawer-overlay" onclick="closeDrawer()" class="fixed inset-0 z-50 bg-slate-900/60 hidden transition-opacity"></div>
+    <aside id="side-drawer" class="fixed top-0 left-0 bottom-0 z-50 w-72 max-w-[85vw] bg-white dark:bg-slate-800 shadow-2xl transform -translate-x-full transition-transform duration-300 flex flex-col">
+      <div class="bg-[#1557B0] text-white p-5 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center font-extrabold text-sm">ACS</div>
+          <div>
+            <p class="font-bold text-sm leading-tight">CONECTA ACS</p>
+            <p class="text-[11px] text-blue-100">Conta: Unilasalle</p>
+          </div>
+        </div>
+        <button onclick="closeDrawer()" class="w-8 h-8 rounded-lg hover:bg-white/20 flex items-center justify-center text-lg font-bold" aria-label="Fechar menu">✕</button>
+      </div>
+
+      <nav class="flex-1 p-3 space-y-1.5 overflow-y-auto">
+        <button onclick="navigateMain('home'); closeDrawer();" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold hover:bg-[#E8F1FC] dark:hover:bg-slate-700 text-[#0E3A5D] dark:text-white transition">
+          <span>🏠</span> <span>TELA INICIAL</span>
+        </button>
+        <button onclick="navigateMain('profile'); closeDrawer();" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold hover:bg-[#E8F1FC] dark:hover:bg-slate-700 text-[#0E3A5D] dark:text-white transition">
+          <span>👤</span> <span>MEU PERFIL</span>
+        </button>
+        <button onclick="navigateMain('requests'); closeDrawer();" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold hover:bg-[#E8F1FC] dark:hover:bg-slate-700 text-[#0E3A5D] dark:text-white transition">
+          <span>📝</span> <span>SOLICITAÇÕES</span>
+        </button>
+        <button onclick="navigateMain('reports'); closeDrawer();" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold hover:bg-[#E8F1FC] dark:hover:bg-slate-700 text-[#0E3A5D] dark:text-white transition">
+          <span>📊</span> <span>RELATÓRIOS</span>
+        </button>
+        <button onclick="navigateMain('pending'); closeDrawer();" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left text-sm font-semibold hover:bg-[#E8F1FC] dark:hover:bg-slate-700 text-[#0E3A5D] dark:text-white transition">
+          <span class="flex items-center gap-3"><span>⚠️</span> <span>PENDÊNCIAS</span></span>
+          <span id="drawer-pending-badge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">4</span>
+        </button>
+      </nav>
+
+      <div class="p-4 border-t border-slate-200 dark:border-slate-700">
+        <button onclick="logoutSystem()" class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-50 dark:bg-red-950/50 hover:bg-red-600 text-red-600 hover:text-white font-bold text-sm transition">
+          <span>🚪</span> <span>SAIR</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CABEÇALHO SUPERIOR AZUL ROYAL (#1557B0) -->
+    <header class="bg-[#1557B0] text-white shadow-md no-print">
+      <div class="max-w-7xl mx-auto px-4 pt-3 pb-2 flex flex-wrap items-center justify-between gap-2">
+        <!-- Data e Hora em Tempo Real (pt-BR) -->
+        <div class="flex items-center gap-2 text-xs sm:text-sm font-medium text-blue-50">
+          <span class="inline-block w-2 h-2 rounded-full bg-[#2BAE66] animate-pulse"></span>
+          <span id="live-datetime">Qua, 25 de novembro de 2026 • 06:09:00</span>
+        </div>
+
+        <!-- 3 Ícones Funcionais à Direita com Badges -->
+        <div class="flex items-center gap-2">
+          <button onclick="navigateMain('notifications')" class="relative p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition" title="Notificações" aria-label="Notificações">
+            <span class="text-base leading-none">🔔</span>
+            <span id="badge-notif" class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#2BAE66] text-white text-[10px] font-extrabold flex items-center justify-center">3</span>
+          </button>
+          <button onclick="navigateMain('messages')" class="relative p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition" title="Mensagens" aria-label="Mensagens">
+            <span class="text-base leading-none">✉️</span>
+            <span id="badge-msg" class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-400 text-slate-900 text-[10px] font-extrabold flex items-center justify-center">2</span>
+          </button>
+          <button onclick="navigateMain('settings')" class="relative p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition" title="Configurações" aria-label="Configurações">
+            <span class="text-base leading-none">⚙️</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de Navegação Integrada (Hambúrguer + Atalho Dashboard) -->
+      <div class="max-w-7xl mx-auto px-4 py-2.5 border-t border-white/15 flex items-center justify-between">
+        <button onclick="openDrawer()" class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 font-bold text-sm transition">
+          <span class="text-lg leading-none">☰</span>
+          <span id="header-nav-label">Tela Inicial</span>
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button onclick="navigateMain('home')" class="px-3.5 py-2 rounded-xl bg-white text-[#1557B0] hover:bg-blue-50 font-bold text-xs sm:text-sm shadow-xs transition">
+            Dashboard
+          </button>
+          <button onclick="navigateMain('bi')" class="hidden sm:inline-flex px-3.5 py-2 rounded-xl bg-[#2BAE66] hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-xs transition">
+            Gráficos BI
+          </button>
+        </div>
+      </div>
+
+      <!-- Espaço extra para sobreposição do Cartão de Perfil na Tela Inicial -->
+      <div id="header-overlap-spacer" class="h-14"></div>
+    </header>
+
+    <!-- ===================================================================
+         CONTAINER DAS VIEWS INTERNAS
+         =================================================================== -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 pb-12">
+
+      <!-- =================================================================
+           VIEW: TELA INICIAL (PERFIL SOBREPOSTO + DASHBOARD + ASSISTENTE + 15 MÓDULOS)
+           ================================================================= -->
+      <div id="view-home" class="space-y-6">
+
+        <!-- CARTÃO DE PERFIL SOBREPOSTO AO CABEÇALHO (ESTILO ATENÇÃO BÁSICA) -->
+        <div class="-mt-12 bg-white dark:bg-slate-800 rounded-3xl shadow-md border border-slate-200/80 dark:border-slate-700 pt-12 pb-5 px-5 text-center relative">
+          <!-- Avatar circular centralizado no topo do cartão -->
+          <div class="w-20 h-20 rounded-full bg-[#E8F1FC] dark:bg-slate-700 border-4 border-white dark:border-slate-800 shadow-md flex items-center justify-center mx-auto -mt-22 mb-3 text-[#1557B0] dark:text-blue-300">
+            <svg class="w-11 h-11" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+            </svg>
+          </div>
+          <h2 class="text-lg sm:text-xl font-extrabold text-[#0E3A5D] dark:text-white">Agente Comunitário - Unilasalle</h2>
+          <p class="text-xs sm:text-sm font-semibold text-[#1557B0] dark:text-blue-400 mt-0.5">Clínica da Família Pantanal Sossego</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Equipe ESF Eça de Queiroz | Microárea 04</p>
+        </div>
+
+        <!-- SEÇÃO 1: DASHBOARD & DIÁRIO DE CAMPO -->
+        <section class="bg-white dark:bg-slate-800 rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700 p-5 sm:p-6 space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-[#2BAE66]">Sincronização e Produção</span>
+              <h3 class="text-lg font-extrabold text-[#0E3A5D] dark:text-white">DIÁRIO DE CAMPO</h3>
+            </div>
+            <button onclick="navigateMain('bi')" class="px-4 py-2.5 rounded-xl bg-[#1557B0] hover:bg-[#0E3A5D] text-white font-bold text-xs shadow-xs transition flex items-center gap-2">
+              <span>📈</span> <span>VER GRÁFICOS / MEUS GRÁFICOS</span>
+            </button>
+          </div>
+
+          <!-- 4 Indicadores Numéricos Reais/Dinâmicos -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="p-4 rounded-2xl bg-[#E8F1FC]/70 dark:bg-slate-700/60 border border-blue-100 dark:border-slate-600">
+              <p class="text-[11px] font-bold text-slate-500 dark:text-slate-300 uppercase">CADASTROS</p>
+              <p id="stat-cadastros" class="text-2xl sm:text-3xl font-extrabold text-[#1557B0] dark:text-blue-400 mt-1">148</p>
+              <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">Individuais e Domiciliares</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-[#E8F1FC]/70 dark:bg-slate-700/60 border border-blue-100 dark:border-slate-600">
+              <p class="text-[11px] font-bold text-slate-500 dark:text-slate-300 uppercase">VISITAS</p>
+              <p id="stat-visitas" class="text-2xl sm:text-3xl font-extrabold text-[#0E3A5D] dark:text-white mt-1">64</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1">Registradas no ciclo</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-[#E8F1FC]/70 dark:bg-slate-700/60 border border-blue-100 dark:border-slate-600">
+              <p class="text-[11px] font-bold text-slate-500 dark:text-slate-300 uppercase">FAMÍLIAS</p>
+              <p id="stat-familias" class="text-2xl sm:text-3xl font-extrabold text-[#2BAE66] mt-1">92</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1">Microárea 04 ativa</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-[#E8F1FC]/70 dark:bg-slate-700/60 border border-blue-100 dark:border-slate-600">
+              <p class="text-[11px] font-bold text-slate-500 dark:text-slate-300 uppercase">ACOMPANHAMENTOS</p>
+              <p id="stat-acompanhamentos" class="text-2xl sm:text-3xl font-extrabold text-[#1557B0] dark:text-blue-400 mt-1">41</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1">Grupos prioritários</p>
+            </div>
+          </div>
+
+          <!-- INDICADORES DE PERÍODO (DIÁRIO, SEMANAL, MENSAL) -->
+          <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#0E3A5D] dark:text-slate-300">INDICADORES DE PERÍODO</h4>
+              <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-700 p-1">
+                <button onclick="setDashboardPeriod('DIÁRIO')" id="tab-period-DIÁRIO" class="period-tab px-3 py-1.5 rounded-lg text-xs font-bold bg-[#1557B0] text-white transition">DIÁRIO</button>
+                <button onclick="setDashboardPeriod('SEMANAL')" id="tab-period-SEMANAL" class="period-tab px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 transition">SEMANAL</button>
+                <button onclick="setDashboardPeriod('MENSAL')" id="tab-period-MENSAL" class="period-tab px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 transition">MENSAL</button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/20 flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase">LANÇAMENTOS (CONCLUÍDOS)</span>
+                  <p id="period-completed-desc" class="text-xs text-slate-600 dark:text-slate-300 mt-1">Fichas validadas e transmitidas hoje.</p>
+                </div>
+                <span id="period-completed-val" class="text-3xl font-extrabold text-[#2BAE66]">12</span>
+              </div>
+
+              <div onclick="navigateMain('pending')" class="cursor-pointer p-4 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-950/20 flex items-center justify-between hover:shadow-xs transition">
+                <div>
+                  <span class="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase">PENDÊNCIAS (CLIQUE PARA DETALHAR)</span>
+                  <p id="period-pending-desc" class="text-xs text-slate-600 dark:text-slate-300 mt-1">2 aguardando sincronização • 2 revisões.</p>
+                </div>
+                <span id="period-pending-val" class="text-3xl font-extrabold text-amber-600">4</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SEÇÃO 2: ASSISTENTE VIRTUAL CONSULTOR (ESTILO WHATSAPP / MENSAGENS) -->
+        <section class="bg-white dark:bg-slate-800 rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700 overflow-hidden">
+          <!-- Cabeçalho estilo WhatsApp Institucional -->
+          <div class="bg-[#0E3A5D] text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-[#2BAE66] flex items-center justify-center text-white font-extrabold text-lg shadow-xs">
+                🤖
+              </div>
+              <div>
+                <h3 class="font-bold text-sm sm:text-base leading-tight">Assistente Virtual Consultor</h3>
+                <p class="text-[11px] text-emerald-300 font-medium">● Online • Apoio Operacional CONECTA ACS</p>
+              </div>
+            </div>
+
+            <!-- Controles de Navegação do Chat -->
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button onclick="consultantGoBack()" class="px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-bold transition">Voltar</button>
+              <button onclick="consultantMainMenu()" class="px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-bold transition">Menu Inicial</button>
+              <button onclick="consultantRestart()" class="px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-bold transition">Reiniciar Conversa</button>
+              <button onclick="consultantEnd()" class="px-2.5 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-600 text-[11px] font-bold transition">Encerrar Atendimento</button>
+            </div>
+          </div>
+
+          <!-- Área de Mensagens (Balões) -->
+          <div id="chat-messages" class="p-4 sm:p-5 h-80 sm:h-96 overflow-y-auto chat-scroll bg-[#EFEAE2] dark:bg-slate-900/90 space-y-3"></div>
+
+          <!-- Opções Interativas Rápidas do Fluxo Atual -->
+          <div id="chat-options" class="p-3 bg-slate-50 dark:bg-slate-800/95 border-t border-slate-200 dark:border-slate-700 flex flex-wrap gap-2 max-h-44 overflow-y-auto"></div>
+
+          <!-- Campo de Busca / Digitação Rápida -->
+          <form onsubmit="handleChatSearch(event)" class="p-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
+            <input id="chat-input" type="text" placeholder="Digite uma dúvida ou palavra-chave (ex: sincronização, senha, visitas, gráficos)..." class="flex-1 px-4 py-2.5 rounded-full bg-slate-100 dark:bg-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#2BAE66]" />
+            <button type="submit" class="px-4 py-2.5 rounded-full bg-[#2BAE66] hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm transition">
+              Enviar
+            </button>
+          </form>
+        </section>
+
+        <!-- SEÇÃO 3: OS 15 MÓDULOS OPERACIONAIS (ESTILO ATENÇÃO BÁSICA) -->
+        <section class="bg-white dark:bg-slate-800 rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700 p-5 sm:p-6">
+          <div class="mb-5">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[#1557B0] dark:text-blue-400">Acesso Rápido</span>
+            <h3 class="text-lg font-extrabold text-[#0E3A5D] dark:text-white">MÓDULOS OPERACIONAIS</h3>
+          </div>
+
+          <div id="modules-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <!-- Renderizado dinamicamente via JS com os 15 módulos exatos -->
+          </div>
+        </section>
+
+      </div>
+
+      <!-- =================================================================
+           VIEW DINÂMICA PARA SUBTELAS (MÓDULOS, MENU LATERAL, CABEÇALHO E BI)
+           ================================================================= -->
+      <div id="view-subscreen" class="hidden pt-5 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700 no-print">
+          <button onclick="navigateMain('home')" class="px-4 py-2.5 rounded-xl bg-[#E8F1FC] dark:bg-slate-700 hover:bg-[#1557B0] hover:text-white text-[#1557B0] dark:text-white font-bold text-xs sm:text-sm transition">
+            ← VOLTAR PARA TELA INICIAL
+          </button>
+          <h2 id="subscreen-title" class="text-base sm:text-lg font-extrabold text-[#0E3A5D] dark:text-white uppercase">TÍTULO DA TELA</h2>
+        </div>
+
+        <div id="subscreen-content" class="space-y-5"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- =====================================================================
+       SCRIPT COMPLETO E ESTRUTURADO DA APLICAÇÃO CONECTA ACS
+       ===================================================================== -->
+  <script>
+    /* =====================================================================
+       1. ESTADO GLOBAL E DADOS INICIAIS REALISTAS DO SISTEMA
+       ===================================================================== */
+    const CREATED_ACCOUNTS_STORAGE_KEY = 'conecta_acs_simulated_accounts_v1';
+    const LEGACY_ACCOUNTS_STORAGE_KEY = 'conecta_acs_created_accounts_v1';
+    let lastCreatedAccountUsername = null;
+
+    // Carrega e salva contas simuladas no localStorage sem alterar a conta padrão Unilasalle/admin
+    function loadCreatedAccounts() {
+      try {
+        let raw = localStorage.getItem(CREATED_ACCOUNTS_STORAGE_KEY);
+        if (!raw) {
+          const legacyRaw = localStorage.getItem(LEGACY_ACCOUNTS_STORAGE_KEY);
+          if (legacyRaw) {
+            localStorage.setItem(CREATED_ACCOUNTS_STORAGE_KEY, legacyRaw);
+            raw = legacyRaw;
+          }
+        }
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function saveCreatedAccounts(accounts) {
+      try {
+        localStorage.setItem(CREATED_ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
+      } catch (err) {
+        showToast('Não foi possível salvar no armazenamento local do navegador.', 'warning');
+      }
+    }
+
+    function getCreatedAccountByUsername(username) {
+      if (!username) return null;
+      const target = username.trim().toLowerCase();
+      return loadCreatedAccounts().find(acc => String(acc.username || '').trim().toLowerCase() === target) || null;
+    }
+
+    function findDuplicateSimulatedAccount(username, email, institutionalCode) {
+      const targetUser = String(username || '').trim().toLowerCase();
+      const targetEmail = String(email || '').trim().toLowerCase();
+      const targetCode = String(institutionalCode || '').trim().toUpperCase();
+      const accounts = loadCreatedAccounts();
+
+      for (const acc of accounts) {
+        if (String(acc.username || '').trim().toLowerCase() === targetUser) {
+          return 'Este nome de usuário já está cadastrado neste navegador.';
+        }
+        if (targetEmail && String(acc.email || '').trim().toLowerCase() === targetEmail) {
+          return 'Este e-mail institucional já está cadastrado neste navegador.';
+        }
+        if (targetCode && String(acc.institutionalCode || '').trim().toUpperCase() === targetCode) {
+          return 'Este código institucional já está vinculado a outra solicitação neste navegador.';
+        }
+      }
+      return null;
+    }
+
+    function updateCreatedAccountStatus(username, newStatus) {
+      const accounts = loadCreatedAccounts();
+      const idx = accounts.findIndex(acc => String(acc.username || '').trim().toLowerCase() === String(username || '').trim().toLowerCase());
+      if (idx === -1) return null;
+      accounts[idx].status = newStatus;
+      accounts[idx].updatedAt = new Date().toISOString();
+      saveCreatedAccounts(accounts);
+      return accounts[idx];
+    }
+
+    const APP_STATE = {
+      currentUser: 'Unilasalle',
+      currentPeriod: 'DIÁRIO',
+      activeView: 'home',
+      biPeriod: 'Mensal',
+      biChartType: 'colunas',
+      biPowerBIUrl: localStorage.getItem('conecta_acs_powerbi_url_2026') || 'https://app.powerbi.com/',
+      biPowerBIEmbedOpen: false,
+      stats: {
+        cadastros: 148,
+        visitas: 64,
+        familias: 92,
+        acompanhamentos: 41
+      },
+      periodData: {
+        'DIÁRIO': { completed: 12, desc: 'Fichas validadas e transmitidas hoje.' },
+        'SEMANAL': { completed: 58, desc: 'Produção consolidada nos últimos 7 dias.' },
+        'MENSAL': { completed: 214, desc: 'Total acumulado na competência atual.' }
+      },
+      pacientes: [
+        { id: 'P001', nome: 'Maria Helena da Silva', cns: '700001234567890', idade: 68, microarea: '04', endereco: 'Rua Eça de Queiroz, 112', condicoes: ['Hipertensão', 'Diabetes'], status: 'Ativo' },
+        { id: 'P002', nome: 'José Carlos Pereira', cns: '700009876543210', idade: 54, microarea: '04', endereco: 'Rua Eça de Queiroz, 145', condicoes: ['Hipertensão'], status: 'Ativo' },
+        { id: 'P003', nome: 'Ana Beatriz Souza', cns: '700004567891234', idade: 27, microarea: '04', endereco: 'Travessa das Acácias, 34', condicoes: ['Gestante'], status: 'Ativo' },
+        { id: 'P004', nome: 'Lucas Gabriel Oliveira', cns: '700003216549870', idade: 2, microarea: '04', endereco: 'Rua Machado de Assis, 88', condicoes: ['Puericultura'], status: 'Ativo' },
+        { id: 'P005', nome: 'Francisca das Chagas Lima', cns: '700007891234560', idade: 76, microarea: '04', endereco: 'Rua José de Alencar, 201', condicoes: ['Acamado', 'Lesão Crônica'], status: 'Ativo' }
+      ],
+      domicilios: [
+        { id: 'D01', logradouro: 'Rua Eça de Queiroz, 112', bairro: 'Pantanal', familias: 1, moradores: 3, situacao: 'Regular', risco: 'Médio' },
+        { id: 'D02', logradouro: 'Rua Eça de Queiroz, 145', bairro: 'Pantanal', familias: 1, moradores: 4, situacao: 'Regular', risco: 'Baixo' },
+        { id: 'D03', logradouro: 'Travessa das Acácias, 34', bairro: 'Pantanal', familias: 2, moradores: 6, situacao: 'Acompanhamento Prioritário', risco: 'Alto' },
+        { id: 'D04', logradouro: 'Rua Machado de Assis, 88', bairro: 'Pantanal', familias: 1, moradores: 5, situacao: 'Regular', risco: 'Baixo' }
+      ],
+      visitas: [
+        { id: 'V101', cidadao: 'Maria Helena da Silva', data: '25/11/2026', turno: 'Manhã', motivo: 'Acompanhamento Hipertensão/Diabetes', desfecho: 'Visita Realizada', status: 'Realizada' },
+        { id: 'V102', cidadao: 'Ana Beatriz Souza', data: '25/11/2026', turno: 'Manhã', motivo: 'Busca Ativa Pré-Natal', desfecho: 'Visita Realizada', status: 'Realizada' },
+        { id: 'V103', cidadao: 'Francisca das Chagas Lima', data: '25/11/2026', turno: 'Tarde', motivo: 'Curativo / Paciente Acamado', desfecho: 'Aguardando Registro', status: 'Pendente' },
+        { id: 'V104', cidadao: 'José Carlos Pereira', data: '26/11/2026', turno: 'Manhã', motivo: 'Atualização Cadastral', desfecho: 'Programada', status: 'Agendada' },
+        { id: 'V105', cidadao: 'Lucas Gabriel Oliveira', data: '24/11/2026', turno: 'Tarde', motivo: 'Acompanhamento Infantil', desfecho: 'Ausente no Domicílio', status: 'Cancelada' }
+      ],
+      pendencias: [
+        { id: 'PEN-01', tipo: 'Sincronização', titulo: 'Ficha de Visita Domiciliar — Ana Beatriz Souza', detalhe: 'Salva offline aguardando envio ao e-SUS APS.', modulo: 'sync' },
+        { id: 'PEN-02', tipo: 'Sincronização', titulo: 'Cadastro Domiciliar — Travessa das Acácias, 34', detalhe: 'Atualização de composição familiar pendente de transmissão.', modulo: 'sync' },
+        { id: 'PEN-03', tipo: 'Inconsistência', titulo: 'CNS Duplicado — José Carlos Pereira', detalhe: 'Necessário confirmar número do Cartão Nacional de Saúde.', modulo: 'inconsistencies' },
+        { id: 'PEN-04', tipo: 'Incompleto', titulo: 'Visita Domiciliar — Francisca das Chagas Lima', detalhe: 'Desfecho clínico pendente de preenchimento.', modulo: 'visits-control' }
+      ],
+      inconsistencias: [
+        { id: 'INC-01', paciente: 'José Carlos Pereira', campo: 'Cartão Nacional de Saúde (CNS)', descricao: 'Divergência de dígito verificador na base municipal.', resolvido: false },
+        { id: 'INC-02', paciente: 'Família D03 (Trav. Acácias)', campo: 'CEP / Logradouro', descricao: 'Logradouro sem vínculo de microárea confirmado.', resolvido: false }
+      ],
+      solicitacoes: [
+        { id: 'SOL-2026-01', tipo: 'Revisão de Lançamento', descricao: 'Correção de turno na ficha de visita V101', data: '24/11/2026', status: 'Em Análise' },
+        { id: 'SOL-2026-02', tipo: 'Atualização de Microárea', descricao: 'Inclusão de novo logradouro na Microárea 04', data: '20/11/2026', status: 'Aprovada' }
+      ],
+      lesoes: [
+        { id: 'L01', paciente: 'Francisca das Chagas Lima', local: 'Região Sacral (Estágio II)', data: '25/11/2026', conduta: 'Limpeza com SF 0,9% + Hidrogel + Cobertura estéril', evolucao: 'Estável / Em cicatrização' }
+      ],
+      medicamentos: [
+        { id: 'M01', paciente: 'Maria Helena da Silva', farmaco: 'Losartana Potássica 50mg', posologia: '1 comp. 12/12h', adesao: 'Regular' },
+        { id: 'M02', paciente: 'Maria Helena da Silva', farmaco: 'Metformina 850mg', posologia: '1 comp. após almoço e jantar', adesao: 'Regular' },
+        { id: 'M03', paciente: 'José Carlos Pereira', farmaco: 'Hidroclorotiazida 25mg', posologia: '1 comp. pela manhã', adesao: 'Irregular (Orientado)' }
+      ],
+      procedimentos: [
+        { id: 'PR01', paciente: 'Maria Helena da Silva', tipo: 'Aferição de Pressão Arterial', valor: '130 x 80 mmHg', data: '25/11/2026' },
+        { id: 'PR02', paciente: 'Maria Helena da Silva', tipo: 'Glicemia Capilar', valor: '118 mg/dL (Pós-prandial)', data: '25/11/2026' }
+      ],
+      consumoAlimentar: [
+        { id: 'CA01', paciente: 'Lucas Gabriel Oliveira (2 anos)', faixa: 'Crianças de 6 a 23 meses / 2 anos', resultado: 'Consumo adequado de frutas, legumes e comida de sal; sem ultraprocessados.', data: '24/11/2026' }
+      ],
+      atividadesColetivas: [
+        { id: 'AC01', tema: 'Grupo Hiperdia — Prevenção e Autocuidado', local: 'Clínica da Família Pantanal Sossego', participantes: 22, data: '22/11/2026' }
+      ],
+      agenda: [
+        { id: 'AG01', data: '25/11/2026', hora: '14:00', titulo: 'Visita Domiciliar Prioritária — Sra. Francisca', tipo: 'Visita' },
+        { id: 'AG02', data: '26/11/2026', hora: '09:00', titulo: 'Reunião de Equipe ESF Eça de Queiroz', tipo: 'Reunião' },
+        { id: 'AG03', data: '27/11/2026', hora: '10:30', titulo: 'Busca Ativa Vacinal — Microárea 04', tipo: 'Campanha' }
+      ],
+      notificacoes: [
+        { id: 'N1', titulo: '2 Fichas Aguardando Sincronização', texto: 'Toque para abrir o módulo de Sincronização e enviar os registros.', lida: false, destino: 'sync' },
+        { id: 'N2', titulo: 'Inconsistência Cadastral Detectada', texto: 'Revisar CNS de José Carlos Pereira no módulo de Inconsistências.', lida: false, destino: 'inconsistencies' },
+        { id: 'N3', titulo: 'Lembrete de Visita Agendada', texto: 'Visita à Sra. Francisca das Chagas Lima hoje às 14:00.', lida: false, destino: 'agenda' }
+      ],
+      mensagens: [
+        { id: 'MSG1', remetente: 'Coordenação ESF Eça de Queiroz', assunto: 'Fechamento de Produção Mensal', data: '25/11/2026 05:45', lida: false, corpo: 'Prezados Agentes Comunitários de Saúde, lembramos que a sincronização das fichas de visita domiciliar e cadastro deve ser realizada diariamente até as 17h para consolidação dos indicadores da Clínica da Família Pantanal Sossego.' },
+        { id: 'MSG2', remetente: 'Vigilância em Saúde — Duque de Caxias', assunto: 'Busca Ativa de Gestantes e Puericultura', data: '24/11/2026 14:20', lida: false, corpo: 'Solicitamos atenção especial às famílias da Microárea 04 com gestantes e crianças menores de 2 anos para atualização do calendário vacinal e marcadores de consumo alimentar.' }
+      ],
+      settings: {
+        sound: true,
+        textSize: 'normal',
+        darkMode: false,
+        pushNotif: true,
+        syncAlert: true
+      }
+    };
+
+    /* =====================================================================
+       2. DEFINIÇÃO DOS 15 MÓDULOS OPERACIONAIS
+       ===================================================================== */
+    const MODULES_LIST = [
+      { id: 'patients', label: 'PACIENTES', icon: '🧑‍🤝‍🧑' },
+      { id: 'households', label: 'DOMICÍLIOS', icon: '🏠' },
+      { id: 'household-reg', label: 'CADASTRO DOMICILIAR', icon: '🏡' },
+      { id: 'visit-form', label: 'FICHA DE VISITA DOMICILIAR', icon: '📋' },
+      { id: 'visits-control', label: 'CONTROLE DE VISITAS', icon: '✅' },
+      { id: 'reports', label: 'RELATÓRIOS', icon: '📊' },
+      { id: 'inconsistencies', label: 'INCONSISTÊNCIAS CADASTRAIS', icon: '⚠️' },
+      { id: 'route', label: 'ROTA DE VISITAS', icon: '🗺️' },
+      { id: 'sync', label: 'SINCRONIZAÇÃO', icon: '🔄' },
+      { id: 'lesions', label: 'ACOMPANHAMENTO DE LESÕES', icon: '🩹' },
+      { id: 'medications', label: 'MEDICAMENTOS', icon: '💊' },
+      { id: 'procedures', label: 'FICHA DE PROCEDIMENTOS', icon: '🩺' },
+      { id: 'food-intake', label: 'FICHA DE CONSUMO ALIMENTAR', icon: '🥗' },
+      { id: 'collective', label: 'FICHA DE ATIVIDADES COLETIVAS', icon: '👥' },
+      { id: 'agenda', label: 'AGENDA', icon: '📅' }
+    ];
+
+    /* =====================================================================
+       3. BASE DE CONHECIMENTO COMPLETA DO ASSISTENTE VIRTUAL CONSULTOR
+       ===================================================================== */
+    const CONSULTANT_KB = {
+      duvidas: {
+        'Sobre o Site': [
+          { q: 'O que é a plataforma CONECTA ACS?', a: 'A plataforma CONECTA ACS é um ambiente web de apoio operacional, consulta rápida e acompanhamento de sincronização desenvolvido para auxiliar o Agente Comunitário de Saúde (ACS) no registro organizado das atividades da Atenção Básica.' },
+          { q: 'O CONECTA ACS substitui o aplicativo oficial e-SUS APS?', a: 'Não. Ele atua como ferramenta complementar de apoio ao planejamento, conferência de pendências, organização de rotas e visualização de indicadores antes e durante a sincronização.' },
+          { q: 'Posso acessar a plataforma pelo celular e pelo computador?', a: 'Sim! O sistema possui layout responsivo adaptado para smartphones, tablets e computadores da unidade de saúde.' }
+        ],
+        'Sobre Procedimentos': [
+          { q: 'Como registrar uma visita domiciliar corretamente?', a: 'Acesse o módulo "FICHA DE VISITA DOMICILIAR", selecione o cidadão ou informe o nome, escolha o turno, o motivo da visita (ex.: acompanhamento de hipertensão, busca ativa) e o desfecho (Visita Realizada, Ausente ou Recusada), clicando em Salvar.' },
+          { q: 'Como lançar aferição de pressão arterial ou glicemia?', a: 'Abra o módulo "FICHA DE PROCEDIMENTOS", selecione o paciente, escolha o procedimento realizado, registre o valor aferido e salve o lançamento.' },
+          { q: 'O que fazer quando o morador está ausente no momento da visita?', a: 'Registre a tentativa na Ficha de Visita Domiciliar marcando o desfecho "Ausente no Domicílio" e reagende uma nova tentativa na Agenda ou Rota de Visitas.' }
+        ],
+        'Sobre o Dashboard': [
+          { q: 'O que significam os números do Diário de Campo?', a: 'Eles exibem em tempo real o total consolidado de Cadastros, Visitas, Famílias vinculadas à sua microárea e Acompanhamentos prioritários.' },
+          { q: 'Como alternar entre indicadores Diário, Semanal e Mensal?', a: 'Na seção "INDICADORES DE PERÍODO" do Dashboard, clique nas abas DIÁRIO, SEMANAL ou MENSAL para comparar lançamentos concluídos e pendências.' },
+          { q: 'Onde visualizo os gráficos detalhados de produção?', a: 'Clique no botão "VER GRÁFICOS / MEUS GRÁFICOS" no Dashboard ou no atalho "Gráficos BI" no topo da tela.' }
+        ],
+        'Sobre os Módulos': [
+          { q: 'Quantos módulos operacionais estão disponíveis na Tela Inicial?', a: 'Estão disponíveis 15 módulos completos: Pacientes, Domicílios, Cadastro Domiciliar, Ficha de Visita Domiciliar, Controle de Visitas, Relatórios, Inconsistências Cadastrais, Rota de Visitas, Sincronização, Acompanhamento de Lesões, Medicamentos, Ficha de Procedimentos, Ficha de Consumo Alimentar, Ficha de Atividades Coletivas e Agenda.' },
+          { q: 'Como localizar rapidamente um cidadão cadastrado?', a: 'Acesse o módulo "PACIENTES" e utilize a barra de busca por nome, CNS ou condição de saúde.' }
+        ],
+        'Sobre o Cadastro e o Perfil': [
+          { q: 'Onde consulto meus dados de unidade, equipe e microárea?', a: 'Seus dados principais aparecem no cartão superior da Tela Inicial e de forma completa em Menu Lateral (☰) > MEU PERFIL.' },
+          { q: 'Como funciona a criação de nova conta?', a: 'Na tela de login, clique em "CRIAR NOVA CONTA", preencha os dados pessoais e institucionais com o código de 8 caracteres. O cadastro fica com status "Pendente de Aprovação" até validação da gestão.' }
+        ],
+        'Sobre as Funcionalidades': [
+          { q: 'Como funciona a Sincronização de registros?', a: 'No módulo "SINCRONIZAÇÃO", você acompanha os registros salvos localmente e pode clicar em "Sincronizar Agora" para transmitir todas as pendências.' },
+          { q: 'É possível imprimir ou exportar relatórios?', a: 'Sim! Tanto no módulo "RELATÓRIOS" quanto no painel "Gráficos BI", há botões para exportar dados e imprimir o resumo consolidado.' }
+        ],
+        'Sobre Acesso e Permissões': [
+          { q: 'Quem pode acessar esta conta institucional?', a: 'O acesso é restrito ao Agente Comunitário de Saúde autorizado da Equipe ESF Eça de Queiroz (Microárea 04), mediante login e senha individuais.' },
+          { q: 'Como encerrar minha sessão com segurança?', a: 'Abra o Menu Lateral (☰) no canto superior esquerdo e clique no botão vermelho "SAIR" na parte inferior.' }
+        ],
+        'Sobre Dados e Segurança': [
+          { q: 'Os dados dos pacientes são protegidos pela LGPD?', a: 'Sim. Todas as informações seguem os princípios da Lei Geral de Proteção de Dados (LGPD) e o sigilo profissional do SUS.' },
+          { q: 'Posso alterar minha senha de acesso?', a: 'Sim, acesse o ícone de Configurações (⚙️) > Segurança > Mudar Senha.' }
+        ],
+        'Outros Assuntos': [
+          { q: 'Como enviar uma solicitação de revisão de lançamento à coordenação?', a: 'Abra o Menu Lateral (☰) > SOLICITAÇÕES e preencha o formulário descrevendo o registro que precisa de revisão.' },
+          { q: 'Como ativar o Modo Noturno ou aumentar o tamanho da letra?', a: 'Clique no ícone de Configurações (⚙️) no cabeçalho e acesse a categoria "Ajustes".' }
+        ]
+      },
+      consultas: [
+        { label: 'Pacientes', module: 'patients', info: () => `Você possui ${APP_STATE.pacientes.length} pacientes prioritários listados na Microárea 04 (incluindo hipertensos, diabéticos, gestante e acamado).` },
+        { label: 'Domicílios', module: 'households', info: () => `Há ${APP_STATE.domicilios.length} domicílios mapeados ativos na Rua Eça de Queiroz, Travessa das Acácias e Rua Machado de Assis.` },
+        { label: 'Visitas', module: 'visits-control', info: () => `Total de ${APP_STATE.stats.visitas} visitas acumuladas. No controle atual há ${APP_STATE.visitas.filter(v => v.status === 'Pendente').length} visita(s) pendente(s) de conclusão.` },
+        { label: 'Pendências', module: 'pending', info: () => `Existem ${APP_STATE.pendencias.length} pendência(s) registradas entre fichas aguardando sincronização e revisões cadastrais.` },
+        { label: 'Relatórios', module: 'reports', info: () => `Os relatórios consolidados de produção da Equipe ESF Eça de Queiroz estão prontos para consulta e impressão.` },
+        { label: 'Rotas', module: 'route', info: () => `Sua rota do dia prioriza a Rua Eça de Queiroz (turno manhã) e a Travessa das Acácias / Rua José de Alencar (turno tarde).` },
+        { label: 'Agenda', module: 'agenda', info: () => `Você tem ${APP_STATE.agenda.length} compromissos programados na agenda, começando hoje às 14:00.` },
+        { label: 'Indicadores e Gráficos', module: 'bi', info: () => `No período ${APP_STATE.currentPeriod}, constam ${APP_STATE.periodData[APP_STATE.currentPeriod].completed} lançamentos concluídos e ${APP_STATE.pendencias.length} pendências.` },
+        { label: 'Sincronização', module: 'sync', info: () => {
+          const pSync = APP_STATE.pendencias.filter(p => p.tipo === 'Sincronização').length;
+          return pSync > 0 ? `Existem ${pSync} registro(s) aguardando sincronização com a base central.` : `Todos os registros estão 100% sincronizados no momento!`;
+        }},
+        { label: 'Informações do Meu Perfil', module: 'profile', info: () => `Agente Comunitário - Unilasalle | Unidade: Clínica da Família Pantanal Sossego | Equipe ESF Eça de Queiroz | Microárea 04.` }
+      ],
+      ajuda: [
+        { situacao: 'Não consigo acessar o sistema', passos: '1. Verifique se o Caps Lock do teclado está desativado.\n2. Confira se o campo LOGIN e SENHA foram preenchidos sem espaços extras.\n3. Caso tenha esquecido sua credencial, utilize a opção "ESQUECEU SENHA?" na tela inicial de login.' },
+        { situacao: 'Esqueci minha senha', passos: 'Na tela de Login, clique em "ESQUECEU SENHA?", informe seu usuário e e-mail institucional cadastrado e clique em CONFIRMAR para iniciar a redefinição.' },
+        { situacao: 'Não consigo acessar um módulo', passos: '1. Certifique-se de que sua sessão está ativa.\n2. Role até a grade "MÓDULOS OPERACIONAIS" na Tela Inicial e toque no ícone circular desejado.\n3. Se persistir, reinicie a página ou verifique sua conexão.' },
+        { situacao: 'Não consigo salvar um registro', passos: 'Verifique se todos os campos obrigatórios (marcados com *) foram preenchidos corretamente, especialmente datas, seleção de paciente e desfecho.' },
+        { situacao: 'Dificuldade para localizar uma informação', passos: 'Utilize o botão "CONSULTA" aqui mesmo no Assistente Virtual Consultor ou use a barra de pesquisa interna dos módulos de Pacientes e Domicílios.' },
+        { situacao: 'Estou encontrando um erro', passos: 'Anote o módulo em que ocorreu a falha, tente sincronizar os dados pendentes e, se necessário, registre um chamado em Configurações (⚙️) > Suporte > Reportar Problema.' },
+        { situacao: 'Problemas de sincronização', passos: 'Acesse o módulo "SINCRONIZAÇÃO", verifique se o status de rede está ativo e clique no botão "Sincronizar Agora" para reprocessar a fila.' },
+        { situacao: 'Identifiquei informações incorretas', passos: 'Para dados cadastrais divergentes, acesse o módulo "INCONSISTÊNCIAS CADASTRAIS" para corrigir ou abra uma solicitação formal em Menu Lateral (☰) > SOLICITAÇÕES.' },
+        { situacao: 'Dificuldade com os gráficos', passos: 'No painel "Gráficos BI", utilize os filtros superiores (Diário, Semanal, Mensal) e alterne entre Barras, Colunas, Linhas ou Rosca para melhor visualização.' },
+        { situacao: 'Preciso de outro tipo de ajuda', passos: 'Você pode consultar o FAQ completo em Configurações (⚙️) > Suporte ou entrar em contato com o suporte técnico da Clínica da Família Pantanal Sossego.' }
+      ]
+    };
+
+    /* =====================================================================
+       4. INICIALIZAÇÃO E RELÓGIO EM TEMPO REAL (PT-BR)
+       ===================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      initClock();
+      populateBirthDateSelects();
+      renderModulesGrid();
+      updateDashboardUI();
+      updateBadges();
+
+      // Verifica "Lembrar de mim"
+      const savedLogin = localStorage.getItem('conecta_acs_remember');
+      if (savedLogin) {
+        document.getElementById('login-user').value = savedLogin;
+        document.getElementById('login-remember').checked = true;
+      }
+    });
+
+    function initClock() {
+      const update = () => {
+        const now = new Date();
+        const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+        const diaSemana = dias[now.getDay()];
+        const dia = String(now.getDate()).padStart(2, '0');
+        const mes = meses[now.getMonth()];
+        const ano = now.getFullYear();
+        const hora = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        const seg = String(now.getSeconds()).padStart(2, '0');
+        const el = document.getElementById('live-datetime');
+        if (el) {
+          el.textContent = `${diaSemana}, ${dia} de ${mes} de ${ano} • ${hora}:${min}:${seg}`;
+        }
+      };
+      update();
+      setInterval(update, 1000);
+    }
+
+    function populateBirthDateSelects() {
+      const daySel = document.getElementById('reg-dob-day');
+      const yearSel = document.getElementById('reg-dob-year');
+      if (!daySel || !yearSel) return;
+      daySel.innerHTML = '<option value="">Dia</option>';
+      for (let d = 1; d <= 31; d++) {
+        const val = String(d).padStart(2, '0');
+        daySel.innerHTML += `<option value="${val}">${val}</option>`;
+      }
+      yearSel.innerHTML = '<option value="">Ano</option>';
+      for (let y = 2008; y >= 1940; y--) {
+        yearSel.innerHTML += `<option value="${y}">${y}</option>`;
+      }
+    }
+
+    /* =====================================================================
+       5. UTILITÁRIOS DE UI (TOAST, MODAL, SOM)
+       ===================================================================== */
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const colors = {
+        success: 'bg-[#2BAE66] text-white',
+        info: 'bg-[#1557B0] text-white',
+        warning: 'bg-amber-500 text-slate-950',
+        error: 'bg-red-600 text-white'
+      };
+      const el = document.createElement('div');
+      el.className = `pointer-events-auto px-4 py-3 rounded-2xl shadow-lg text-xs sm:text-sm font-bold flex items-center justify-between gap-3 transition-all ${colors[type] || colors.info}`;
+      el.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()" class="opacity-80 hover:opacity-100">✕</button>`;
+      container.appendChild(el);
+      setTimeout(() => { if (el.parentElement) el.remove(); }, 4000);
+    }
+
+    function openModal(title, bodyHtml, footerHtml = '') {
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-body').innerHTML = bodyHtml;
+      document.getElementById('modal-footer').innerHTML = footerHtml || `<button onclick="closeModal()" class="px-4 py-2 rounded-xl bg-[#1557B0] text-white text-xs font-bold">Fechar</button>`;
+      const modal = document.getElementById('app-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('app-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    /* =====================================================================
+       6. AUTENTICAÇÃO E TELAS DE ACESSO (LOGIN, RECUPERAÇÃO, CADASTRO, LOADING)
+       ===================================================================== */
+    function navigateScreen(screenId) {
+      ['screen-login', 'screen-recovery', 'screen-register'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      });
+      const target = document.getElementById(screenId);
+      target.classList.remove('hidden');
+      if (screenId !== 'screen-register') target.classList.add('flex');
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        icon.textContent = '👁️';
+      }
+    }
+
+    function handleLogin(event) {
+      event.preventDefault();
+      const userVal = document.getElementById('login-user').value.trim();
+      const passVal = document.getElementById('login-pass').value;
+      const errBox = document.getElementById('login-error-box');
+
+      // ÚNICA conta padrão válida: Login 'Unilasalle' e Senha 'admin'
+      const isDefaultAccount = (userVal === 'Unilasalle' && passVal === 'admin');
+      const createdAccount = !isDefaultAccount ? getCreatedAccountByUsername(userVal) : null;
+      const isValidApprovedCreatedAccount = Boolean(
+        createdAccount &&
+        createdAccount.password === passVal &&
+        createdAccount.status === 'APROVADA'
+      );
+
+      if (isDefaultAccount || isValidApprovedCreatedAccount) {
+        errBox.classList.add('hidden');
+        APP_STATE.currentUser = isDefaultAccount ? 'Unilasalle' : createdAccount.username;
+        if (document.getElementById('login-remember').checked) {
+          localStorage.setItem('conecta_acs_remember', userVal);
+        } else {
+          localStorage.removeItem('conecta_acs_remember');
+        }
+
+        // Exibe tela de carregamento por ~1.5s
+        document.getElementById('screen-login').classList.add('hidden');
+        const loading = document.getElementById('screen-loading');
+        loading.classList.remove('hidden');
+        loading.classList.add('flex');
+
+        setTimeout(() => {
+          loading.classList.add('hidden');
+          loading.classList.remove('flex');
+          const shell = document.getElementById('app-shell');
+          shell.classList.remove('hidden');
+          shell.classList.add('flex');
+          navigateMain('home');
+          initConsultantChat();
+        }, 1500);
+      } else {
+        if (createdAccount && createdAccount.password === passVal && createdAccount.status !== 'APROVADA') {
+          errBox.textContent = 'CONTA AINDA PENDENTE DE APROVAÇÃO. AGUARDE OU SIMULE A APROVAÇÃO ADMINISTRATIVA.';
+        } else {
+          errBox.textContent = 'LOGIN/SENHA INCORRETOS. TENTE NOVAMENTE.';
+        }
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    function handleRecovery(event) {
+      event.preventDefault();
+      document.getElementById('recovery-result').classList.remove('hidden');
+      showToast('Solicitação de recuperação processada.', 'info');
+    }
+
+    function openSimulateResetModal() {
+      openModal(
+        'Simular Redefinição de Senha',
+        `<p class="text-xs text-slate-600 dark:text-slate-300 mb-3">Simulação institucional concluída. Lembre-se de que neste ambiente demonstrativo a credencial oficial da conta permanece ativa.</p>
+         <div class="space-y-2">
+           <label class="block text-xs font-bold">Nova Senha (Simulação)</label>
+           <input type="password" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+         </div>`,
+        `<button onclick="closeModal(); navigateScreen('screen-login'); showToast('Simulação de redefinição concluída!', 'success');" class="px-4 py-2 rounded-xl bg-[#2BAE66] text-white text-xs font-bold">Confirmar e Voltar ao Login</button>`
+      );
+    }
+
+    function validateRegisterPasswords() {
+      const p1 = document.getElementById('reg-pass').value;
+      const p2 = document.getElementById('reg-pass-confirm').value;
+      const fb = document.getElementById('reg-pass-feedback');
+      if (!p2) { fb.textContent = ''; return true; }
+      if (p1 === p2) {
+        fb.textContent = '✓ As senhas coincidem.';
+        fb.className = 'text-[11px] mt-1 font-bold text-[#2BAE66]';
+        return true;
+      } else {
+        fb.textContent = '✕ As senhas não coincidem.';
+        fb.className = 'text-[11px] mt-1 font-bold text-red-600';
+        return false;
+      }
+    }
+
+    function handleRegisterSubmit(event) {
+      event.preventDefault();
+      if (!validateRegisterPasswords()) {
+        showToast('Verifique a confirmação de senha antes de enviar.', 'error');
+        return;
+      }
+
+      const username = document.getElementById('reg-username').value.trim();
+      const password = document.getElementById('reg-pass').value;
+      const fullName = document.getElementById('reg-fullname').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const role = document.getElementById('reg-role').value;
+      const unit = document.getElementById('reg-unit').value;
+      const team = document.getElementById('reg-team').value;
+      const microarea = document.getElementById('reg-microarea').value;
+      const institutionalCode = document.getElementById('reg-code').value.trim().toUpperCase();
+
+      if (username.toLowerCase() === 'unilasalle') {
+        showToast('Este nome de usuário já está reservado pela conta principal.', 'error');
+        return;
+      }
+
+      const duplicateMessage = findDuplicateSimulatedAccount(username, email, institutionalCode);
+      if (duplicateMessage) {
+        showToast(duplicateMessage, 'warning');
+        return;
+      }
+
+      const accounts = loadCreatedAccounts();
+      const approvedAtIso = new Date().toISOString();
+      const newAccount = {
+        username,
+        password,
+        fullName,
+        email,
+        role,
+        unit,
+        team,
+        microarea,
+        institutionalCode,
+        anoReferencia: 2026,
+        aprovacaoAutomatica: true,
+        status: 'APROVADA',
+        createdAt: approvedAtIso,
+        approvedAt: approvedAtIso
+      };
+      accounts.push(newAccount);
+      saveCreatedAccounts(accounts);
+      lastCreatedAccountUsername = username;
+
+      const badgeEl = document.getElementById('register-status-badge');
+      if (badgeEl) {
+        badgeEl.className = 'w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-3xl';
+        badgeEl.textContent = '✓';
+      }
+      const headingEl = document.getElementById('register-status-heading');
+      if (headingEl) {
+        headingEl.textContent = 'CONTA CRIADA E APROVADA AUTOMATICAMENTE (2026)';
+      }
+      const detailEl = document.getElementById('register-success-detail');
+      if (detailEl) {
+        detailEl.textContent = `A conta institucional "${username}" (${role} • ${unit} / ${team} - ${microarea}) foi criada e aprovada automaticamente para 2026. Você já pode acessar a tela de login com seu usuário e senha.`;
+      }
+      const btnSim = document.getElementById('btn-simulate-approve');
+      if (btnSim) {
+        btnSim.disabled = true;
+        btnSim.textContent = '✓ APROVADA AUTOMATICAMENTE (2026)';
+      }
+
+      document.getElementById('register-form').classList.add('hidden');
+      document.getElementById('register-success').classList.remove('hidden');
+      showToast(`Conta "${username}" criada e aprovada automaticamente (2026)!`, 'success');
+    }
+
+    function simulateApproveCreatedAccount() {
+      if (!lastCreatedAccountUsername) {
+        showToast('Nenhuma conta recém-criada encontrada para simular aprovação.', 'warning');
+        return;
+      }
+      const updated = updateCreatedAccountStatus(lastCreatedAccountUsername, 'APROVADA');
+      if (!updated) {
+        showToast('Não foi possível localizar a conta no armazenamento local.', 'error');
+        return;
+      }
+      const badgeEl = document.getElementById('register-status-badge');
+      if (badgeEl) {
+        badgeEl.className = 'w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-3xl';
+        badgeEl.textContent = '✓';
+      }
+      const headingEl = document.getElementById('register-status-heading');
+      if (headingEl) {
+        headingEl.textContent = 'CONTA APROVADA';
+      }
+      const detailEl = document.getElementById('register-success-detail');
+      if (detailEl) {
+        detailEl.textContent = `Conta "${updated.username}" APROVADA com sucesso! Agora você já pode fazer login com o usuário "${updated.username}" e a senha cadastrada.`;
+      }
+      const btnSim = document.getElementById('btn-simulate-approve');
+      if (btnSim) {
+        btnSim.disabled = true;
+        btnSim.textContent = '✓ CONTA APROVADA PARA LOGIN';
+      }
+      showToast(`Conta "${updated.username}" aprovada! Login simulado liberado.`, 'success');
+    }
+
+    function resetAndBackToLogin() {
+      document.getElementById('register-form').reset();
+      document.getElementById('register-form').classList.remove('hidden');
+      document.getElementById('register-success').classList.add('hidden');
+      document.getElementById('reg-pass-feedback').textContent = '';
+      navigateScreen('screen-login');
+    }
+
+    function logoutSystem() {
+      closeDrawer();
+      APP_STATE.currentUser = 'Unilasalle';
+      document.getElementById('app-shell').classList.add('hidden');
+      document.getElementById('app-shell').classList.remove('flex');
+      document.getElementById('login-pass').value = '';
+      document.getElementById('login-error-box').classList.add('hidden');
+      navigateScreen('screen-login');
+      showToast('Sessão encerrada com segurança.', 'info');
+    }
+
+    /* =====================================================================
+       7. MENU LATERAL HAMBÚRGUER
+       ===================================================================== */
+    function openDrawer() {
+      document.getElementById('drawer-overlay').classList.remove('hidden');
+      document.getElementById('side-drawer').classList.remove('-translate-x-full');
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawer-overlay').classList.add('hidden');
+      document.getElementById('side-drawer').classList.add('-translate-x-full');
+    }
+
+    /* =====================================================================
+       8. DASHBOARD, INDICADORES E GRÁFICOS BI (CANVAS/SVG PURO)
+       ===================================================================== */
+    function updateDashboardUI() {
+      document.getElementById('stat-cadastros').textContent = APP_STATE.stats.cadastros;
+      document.getElementById('stat-visitas').textContent = APP_STATE.stats.visitas;
+      document.getElementById('stat-familias').textContent = APP_STATE.stats.familias;
+      document.getElementById('stat-acompanhamentos').textContent = APP_STATE.stats.acompanhamentos;
+
+      const pInfo = APP_STATE.periodData[APP_STATE.currentPeriod];
+      document.getElementById('period-completed-val').textContent = pInfo.completed;
+      document.getElementById('period-completed-desc').textContent = pInfo.desc;
+      document.getElementById('period-pending-val').textContent = APP_STATE.pendencias.length;
+      const syncCount = APP_STATE.pendencias.filter(p => p.tipo === 'Sincronização').length;
+      const revCount = APP_STATE.pendencias.length - syncCount;
+      document.getElementById('period-pending-desc').textContent = `${syncCount} aguardando sincronização • ${revCount} revisões.`;
+      updateBadges();
+    }
+
+    function setDashboardPeriod(period) {
+      APP_STATE.currentPeriod = period;
+      document.querySelectorAll('.period-tab').forEach(btn => {
+        btn.classList.remove('bg-[#1557B0]', 'text-white');
+        btn.classList.add('text-slate-600', 'dark:text-slate-300');
+      });
+      const activeBtn = document.getElementById(`tab-period-${period}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-[#1557B0]', 'text-white');
+        activeBtn.classList.remove('text-slate-600', 'dark:text-slate-300');
+      }
+      updateDashboardUI();
+    }
+
+    function updateBadges() {
+      const unreadNotif = APP_STATE.notificacoes.filter(n => !n.lida).length;
+      const unreadMsg = APP_STATE.mensagens.filter(m => !m.lida).length;
+      const bNotif = document.getElementById('badge-notif');
+      const bMsg = document.getElementById('badge-msg');
+      const bDrawer = document.getElementById('drawer-pending-badge');
+      if (bNotif) {
+        bNotif.textContent = unreadNotif;
+        bNotif.style.display = unreadNotif > 0 ? 'flex' : 'none';
+      }
+      if (bMsg) {
+        bMsg.textContent = unreadMsg;
+        bMsg.style.display = unreadMsg > 0 ? 'flex' : 'none';
+      }
+      if (bDrawer) bDrawer.textContent = APP_STATE.pendencias.length;
+    }
+
+    function renderModulesGrid() {
+      const grid = document.getElementById('modules-grid');
+      if (!grid) return;
+      grid.innerHTML = MODULES_LIST.map(mod => `
+        <button onclick="navigateMain('${mod.id}')" class="group flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-700/40 hover:bg-[#E8F1FC] dark:hover:bg-slate-700 border border-slate-200/70 dark:border-slate-600 transition text-center cursor-pointer">
+          <div class="w-14 h-14 rounded-full bg-[#E8F1FC] dark:bg-slate-600 group-hover:bg-[#1557B0] text-2xl flex items-center justify-center mb-2.5 shadow-xs transition">
+            <span class="group-hover:scale-110 transition-transform">${mod.icon}</span>
+          </div>
+          <span class="text-[11px] sm:text-xs font-extrabold text-[#0E3A5D] dark:text-slate-100 leading-tight uppercase tracking-tight">
+            ${mod.label}
+          </span>
+        </button>
+      `).join('');
+    }
+
+    /* =====================================================================
+       9. ASSISTENTE VIRTUAL CONSULTOR (FLUXO COMPLETO DO RELATÓRIO)
+       ===================================================================== */
+    const CHAT_STATE = {
+      historyStack: [],
+      ended: false
+    };
+
+    function initConsultantChat() {
+      CHAT_STATE.historyStack = [];
+      CHAT_STATE.ended = false;
+      const box = document.getElementById('chat-messages');
+      box.innerHTML = '';
+      appendBotMessage(`Olá, <strong>${APP_STATE.currentUser}</strong>! Sou o <strong>Assistente Virtual Consultor</strong>. Em que posso te ajudar hoje?`);
+      showConsultantRootOptions();
+    }
+
+    function appendBotMessage(htmlText) {
+      const box = document.getElementById('chat-messages');
+      const now = new Date();
+      const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const div = document.createElement('div');
+      div.className = 'flex justify-start';
+      div.innerHTML = `
+        <div class="max-w-[88%] sm:max-w-[78%] bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl rounded-tl-none px-4 py-3 shadow-xs border border-slate-200/70 dark:border-slate-700 text-xs sm:text-sm leading-relaxed">
+          <div>${htmlText}</div>
+          <div class="text-[10px] text-slate-400 text-right mt-1">${time}</div>
+        </div>
+      `;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function appendUserMessage(text) {
+      const box = document.getElementById('chat-messages');
+      const now = new Date();
+      const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const div = document.createElement('div');
+      div.className = 'flex justify-end';
+      div.innerHTML = `
+        <div class="max-w-[85%] bg-[#D9FDD3] dark:bg-emerald-900 text-slate-900 dark:text-white rounded-2xl rounded-tr-none px-4 py-2.5 shadow-xs text-xs sm:text-sm">
+          <div>${text}</div>
+          <div class="text-[10px] text-slate-500 dark:text-emerald-200 text-right mt-1">${time}</div>
+        </div>
+      `;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function setChatOptionButtons(buttons) {
+      const container = document.getElementById('chat-options');
+      container.innerHTML = buttons.map((b, idx) => `
+        <button type="button" id="chat-opt-btn-${idx}" class="px-3.5 py-2 rounded-full text-xs font-bold border transition cursor-pointer ${b.primary ? 'bg-[#1557B0] text-white border-[#1557B0] hover:bg-[#0E3A5D]' : 'bg-white dark:bg-slate-700 text-[#0E3A5D] dark:text-white border-slate-300 dark:border-slate-600 hover:bg-[#E8F1FC]'}">
+          ${b.label}
+        </button>
+      `).join('');
+      buttons.forEach((b, idx) => {
+        document.getElementById(`chat-opt-btn-${idx}`).onclick = b.action;
+      });
+    }
+
+    function showConsultantRootOptions() {
+      CHAT_STATE.historyStack = [() => showConsultantRootOptions()];
+      setChatOptionButtons([
+        { label: '1. TIRAR DÚVIDA', primary: true, action: () => selectConsultantMain('duvida') },
+        { label: '2. CONSULTA', primary: true, action: () => selectConsultantMain('consulta') },
+        { label: '3. AJUDA', primary: true, action: () => selectConsultantMain('ajuda') }
+      ]);
+    }
+
+    function selectConsultantMain(branch) {
+      if (branch === 'duvida') {
+        appendUserMessage('TIRAR DÚVIDA');
+        appendBotMessage('Selecione uma das <strong>9 categorias de dúvidas</strong> abaixo:');
+        const renderCats = () => {
+          const cats = Object.keys(CONSULTANT_KB.duvidas);
+          setChatOptionButtons(cats.map(cat => ({
+            label: cat,
+            action: () => selectDuvidaCategory(cat)
+          })));
+        };
+        CHAT_STATE.historyStack.push(renderCats);
+        renderCats();
+      } else if (branch === 'consulta') {
+        appendUserMessage('CONSULTA');
+        appendBotMessage('O que você deseja consultar agora no sistema?');
+        const renderConsultas = () => {
+          setChatOptionButtons(CONSULTANT_KB.consultas.map(item => ({
+            label: item.label,
+            action: () => selectConsultaItem(item)
+          })));
+        };
+        CHAT_STATE.historyStack.push(renderConsultas);
+        renderConsultas();
+      } else if (branch === 'ajuda') {
+        appendUserMessage('AJUDA');
+        appendBotMessage('Selecione a situação em que precisa de suporte operacional:');
+        const renderAjuda = () => {
+          setChatOptionButtons(CONSULTANT_KB.ajuda.map(item => ({
+            label: item.situacao,
+            action: () => selectAjudaItem(item)
+          })));
+        };
+        CHAT_STATE.historyStack.push(renderAjuda);
+        renderAjuda();
+      }
+    }
+
+    function selectDuvidaCategory(category) {
+      appendUserMessage(category);
+      const items = CONSULTANT_KB.duvidas[category] || [];
+      appendBotMessage(`Perguntas frequentes sobre <strong>${category}</strong>:`);
+      const renderQuestions = () => {
+        setChatOptionButtons(items.map(qa => ({
+          label: qa.q,
+          action: () => {
+            appendUserMessage(qa.q);
+            appendBotMessage(qa.a);
+          }
+        })));
+      };
+      CHAT_STATE.historyStack.push(renderQuestions);
+      renderQuestions();
+    }
+
+    function selectConsultaItem(item) {
+      appendUserMessage(`Consultar: ${item.label}`);
+      appendBotMessage(`<strong>${item.label}:</strong><br>${item.info()}`);
+      setChatOptionButtons([
+        { label: `IR PARA ${item.label.toUpperCase()} →`, primary: true, action: () => navigateMain(item.module) },
+        { label: 'Outra Consulta', action: () => selectConsultantMain('consulta') },
+        { label: 'Menu Inicial', action: () => consultantMainMenu() }
+      ]);
+    }
+
+    function selectAjudaItem(item) {
+      appendUserMessage(item.situacao);
+      const formattedSteps = item.passos.replace(/\n/g, '<br>');
+      appendBotMessage(`<strong>Diagnóstico — ${item.situacao}:</strong><br>${formattedSteps}`);
+      setChatOptionButtons([
+        { label: 'Problema Resolvido ✓', primary: true, action: () => {
+          appendUserMessage('Problema Resolvido');
+          appendBotMessage('Excelente! Fico à disposição caso precise de mais alguma orientação.');
+          showConsultantRootOptions();
+        }},
+        { label: 'Ver Outra Situação de Ajuda', action: () => selectConsultantMain('ajuda') },
+        { label: 'Menu Inicial', action: () => consultantMainMenu() }
+      ]);
+    }
+
+    function consultantGoBack() {
+      if (CHAT_STATE.historyStack.length > 1) {
+        CHAT_STATE.historyStack.pop();
+        const prev = CHAT_STATE.historyStack[CHAT_STATE.historyStack.length - 1];
+        appendBotMessage('Retornando ao nível anterior:');
+        prev();
+      } else {
+        consultantMainMenu();
+      }
+    }
+
+    function consultantMainMenu() {
+      appendBotMessage('Menu Principal do <strong>Assistente Virtual Consultor</strong>:');
+      showConsultantRootOptions();
+    }
+
+    function consultantRestart() {
+      initConsultantChat();
+      showToast('Conversa reiniciada.', 'info');
+    }
+
+    function consultantEnd() {
+      appendUserMessage('Encerrar Atendimento');
+      appendBotMessage('Atendimento encerrado. Clique em <strong>Menu Inicial</strong> ou <strong>Reiniciar Conversa</strong> quando desejar iniciar um novo atendimento.');
+      setChatOptionButtons([
+        { label: 'Iniciar Novo Atendimento', primary: true, action: () => consultantRestart() }
+      ]);
+    }
+
+    function handleChatSearch(event) {
+      event.preventDefault();
+      const input = document.getElementById('chat-input');
+      const query = input.value.trim();
+      if (!query) return;
+      input.value = '';
+      appendUserMessage(query);
+
+      const qLower = query.toLowerCase();
+      // Busca nas dúvidas
+      for (const cat of Object.keys(CONSULTANT_KB.duvidas)) {
+        for (const qa of CONSULTANT_KB.duvidas[cat]) {
+          if (qa.q.toLowerCase().includes(qLower) || qa.a.toLowerCase().includes(qLower) || cat.toLowerCase().includes(qLower)) {
+            appendBotMessage(`<strong>${qa.q}</strong><br>${qa.a}`);
+            return;
+          }
+        }
+      }
+      // Busca nas consultas
+      for (const c of CONSULTANT_KB.consultas) {
+        if (c.label.toLowerCase().includes(qLower)) {
+          selectConsultaItem(c);
+          return;
+        }
+      }
+      // Busca na ajuda
+      for (const a of CONSULTANT_KB.ajuda) {
+        if (a.situacao.toLowerCase().includes(qLower)) {
+          selectAjudaItem(a);
+          return;
+        }
+      }
+
+      appendBotMessage('Não encontrei uma correspondência exata para essa frase, mas você pode escolher uma das opções abaixo:');
+      showConsultantRootOptions();
+    }
+
+    /* =====================================================================
+       10. NAVEGAÇÃO ENTRE TELA INICIAL E SUBTELAS (MÓDULOS, MENU, CABEÇALHO, BI)
+       ===================================================================== */
+    function navigateMain(viewKey) {
+      APP_STATE.activeView = viewKey;
+      const homeEl = document.getElementById('view-home');
+      const subEl = document.getElementById('view-subscreen');
+      const spacer = document.getElementById('header-overlap-spacer');
+      const navLabel = document.getElementById('header-nav-label');
+
+      if (viewKey === 'home') {
+        homeEl.classList.remove('hidden');
+        subEl.classList.add('hidden');
+        spacer.classList.remove('hidden');
+        navLabel.textContent = 'Tela Inicial';
+        updateDashboardUI();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      homeEl.classList.add('hidden');
+      subEl.classList.remove('hidden');
+      spacer.classList.add('hidden');
+
+      const titles = {
+        'bi': 'PAINEL DE BUSINESS INTELLIGENCE — DEMONSTRAÇÃO',
+        'profile': 'MEU PERFIL INSTITUCIONAL',
+        'requests': 'SOLICITAÇÕES DE REVISÃO',
+        'pending': 'PENDÊNCIAS DE REGISTRO E SINCRONIZAÇÃO',
+        'notifications': 'NOTIFICAÇÕES DO SISTEMA',
+        'messages': 'MENSAGENS E COMUNICADOS',
+        'settings': 'CONFIGURAÇÕES DA PLATAFORMA',
+        'patients': 'MÓDULO: PACIENTES',
+        'households': 'MÓDULO: DOMICÍLIOS',
+        'household-reg': 'MÓDULO: CADASTRO DOMICILIAR',
+        'visit-form': 'MÓDULO: FICHA DE VISITA DOMICILIAR',
+        'visits-control': 'MÓDULO: CONTROLE DE VISITAS',
+        'reports': 'MÓDULO: RELATÓRIOS CONSOLIDADOS',
+        'inconsistencies': 'MÓDULO: INCONSISTÊNCIAS CADASTRAIS',
+        'route': 'MÓDULO: ROTA DE VISITAS',
+        'sync': 'MÓDULO: SINCRONIZAÇÃO',
+        'lesions': 'MÓDULO: ACOMPANHAMENTO DE LESÕES',
+        'medications': 'MÓDULO: MEDICAMENTOS',
+        'procedures': 'MÓDULO: FICHA DE PROCEDIMENTOS',
+        'food-intake': 'MÓDULO: FICHA DE CONSUMO ALIMENTAR',
+        'collective': 'MÓDULO: FICHA DE ATIVIDADES COLETIVAS',
+        'agenda': 'MÓDULO: AGENDA'
+      };
+
+      const title = titles[viewKey] || 'MÓDULO';
+      navLabel.textContent = title;
+      document.getElementById('subscreen-title').textContent = title;
+      renderSubscreenContent(viewKey);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderSubscreenContent(key) {
+      const container = document.getElementById('subscreen-content');
+
+      switch (key) {
+        /* ---------------------------------------------------------------
+           PAINEL DE BUSINESS INTELLIGENCE — DEMONSTRAÇÃO
+           --------------------------------------------------------------- */
+        case 'bi':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-5">
+              <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-4">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-xs font-bold text-slate-500">Período:</span>
+                  ${['Diário', 'Semanal', 'Mensal', 'Personalizado'].map(p => `
+                    <button onclick="APP_STATE.biPeriod='${p}'; renderSubscreenContent('bi');" class="px-3 py-1.5 rounded-xl text-xs font-bold ${APP_STATE.biPeriod === p ? 'bg-[#1557B0] text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'}">${p}</button>
+                  `).join('')}
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-xs font-bold text-slate-500">Visualização:</span>
+                  ${[
+                    { id: 'colunas', label: 'Colunas' },
+                    { id: 'barras', label: 'Barras' },
+                    { id: 'linhas', label: 'Linhas' },
+                    { id: 'pizza', label: 'Pizza/Rosca' }
+                  ].map(t => `
+                    <button onclick="APP_STATE.biChartType='${t.id}'; renderSubscreenContent('bi');" class="px-3 py-1.5 rounded-xl text-xs font-bold ${APP_STATE.biChartType === t.id ? 'bg-[#2BAE66] text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'}">${t.label}</button>
+                  `).join('')}
+                </div>
+              </div>
+
+              ${APP_STATE.biPeriod === 'Personalizado' ? `
+                <div class="flex flex-wrap items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/50 text-xs">
+                  <label class="font-bold">De: <input type="date" value="2026-11-01" class="ml-1 px-2 py-1 rounded-lg border dark:bg-slate-800"></label>
+                  <label class="font-bold">Até: <input type="date" value="2026-11-25" class="ml-1 px-2 py-1 rounded-lg border dark:bg-slate-800"></label>
+                  <button onclick="drawBIChart()" class="px-3 py-1.5 rounded-lg bg-[#1557B0] text-white font-bold">Aplicar Filtro</button>
+                </div>
+              ` : ''}
+
+              <div class="w-full h-72 sm:h-80 bg-slate-50 dark:bg-slate-900/60 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                <canvas id="bi-canvas" class="w-full h-full"></canvas>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600 space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-xs font-extrabold uppercase tracking-wider text-[#0E3A5D] dark:text-white">Integração Power BI (2026)</span>
+                  <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-300">Abra o painel externo ou incorpore o relatório</span>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <input id="bi-powerbi-url" type="url" value="${APP_STATE.biPowerBIUrl.replace(/"/g, '&quot;')}" oninput="savePowerBIUrl(this.value)" placeholder="https://app.powerbi.com/..." class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs sm:text-sm" />
+                  <button type="button" onclick="openPowerBIReport()" class="px-4 py-2.5 rounded-xl bg-[#2BAE66] hover:bg-emerald-700 text-white font-bold text-xs whitespace-nowrap transition">
+                    ↗ ABRIR POWER BI
+                  </button>
+                  <button type="button" onclick="toggleEmbedPowerBI()" class="px-4 py-2.5 rounded-xl bg-[#1557B0] hover:bg-[#0E3A5D] text-white font-bold text-xs whitespace-nowrap transition">
+                    ${APP_STATE.biPowerBIEmbedOpen ? 'OCULTAR INCORPORADO' : 'VER INCORPORADO'}
+                  </button>
+                </div>
+                <div id="bi-powerbi-embed-box" class="${APP_STATE.biPowerBIEmbedOpen ? '' : 'hidden'} rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900">
+                  <iframe id="bi-powerbi-iframe" src="${APP_STATE.biPowerBIEmbedOpen ? APP_STATE.biPowerBIUrl.replace(/"/g, '&quot;') : ''}" title="Relatório Power BI CONECTA ACS 2026" class="w-full h-72 border-0" allowfullscreen="true"></iframe>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <p class="text-xs text-slate-500">Indicadores consolidados da Microárea 04 • Equipe ESF Eça de Queiroz (${APP_STATE.biPeriod} • 2026)</p>
+                <button onclick="exportBIDataCSV()" class="px-4 py-2.5 rounded-xl bg-[#0E3A5D] hover:bg-[#1557B0] text-white font-bold text-xs transition">
+                  📥 EXPORTAR DADOS (CSV)
+                </button>
+              </div>
+            </div>
+          `;
+          setTimeout(drawBIChart, 40);
+          break;
+
+        /* ---------------------------------------------------------------
+           MEU PERFIL
+           --------------------------------------------------------------- */
+        case 'profile':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 space-y-5">
+              <div class="flex items-center gap-4 border-b border-slate-200 dark:border-slate-700 pb-4">
+                <div class="w-16 h-16 rounded-full bg-[#1557B0] text-white flex items-center justify-center text-2xl font-extrabold">U</div>
+                <div>
+                  <h3 class="text-lg font-extrabold text-[#0E3A5D] dark:text-white">Agente Comunitário - Unilasalle</h3>
+                  <p class="text-xs font-semibold text-[#2BAE66]">Status da Conta: Ativa e Sincronizada</p>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
+                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/50"><strong>Usuário:</strong> Unilasalle</div>
+                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/50"><strong>Cargo/Função:</strong> Agente Comunitário de Saúde (ACS)</div>
+                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/50"><strong>Unidade de Saúde:</strong> Clínica da Família Pantanal Sossego</div>
+                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/50"><strong>Equipe:</strong> Equipe ESF Eça de Queiroz</div>
+                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/50"><strong>Microárea:</strong> Microárea 04</div>
+                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/50"><strong>Município / UF:</strong> Duque de Caxias - RJ</div>
+              </div>
+            </div>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           SOLICITAÇÕES
+           --------------------------------------------------------------- */
+        case 'requests':
+          container.innerHTML = `
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <form onsubmit="addNewRequest(event)" class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 space-y-4">
+                <h3 class="font-extrabold text-sm text-[#0E3A5D] dark:text-white uppercase">Nova Solicitação de Revisão</h3>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Tipo de Solicitação *</label>
+                  <select id="req-type" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+                    <option value="Revisão de Lançamento">Revisão de Lançamento</option>
+                    <option value="Correção de Cadastro">Correção de Cadastro</option>
+                    <option value="Ajuste de Território/Microárea">Ajuste de Território/Microárea</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Descrição Detalhada *</label>
+                  <textarea id="req-desc" rows="3" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" placeholder="Descreva o protocolo ou ficha para análise..."></textarea>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-[#1557B0] text-white font-bold text-xs uppercase">Enviar Solicitação</button>
+              </form>
+
+              <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 space-y-3">
+                <h3 class="font-extrabold text-sm text-[#0E3A5D] dark:text-white uppercase">Solicitações Registradas</h3>
+                ${APP_STATE.solicitacoes.map(s => `
+                  <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 flex items-start justify-between gap-2">
+                    <div>
+                      <span class="text-[11px] font-bold text-[#1557B0]">${s.id} • ${s.data}</span>
+                      <p class="font-bold text-xs sm:text-sm mt-0.5">${s.tipo}</p>
+                      <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">${s.descricao}</p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${s.status === 'Aprovada' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${s.status}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           PENDÊNCIAS
+           --------------------------------------------------------------- */
+        case 'pending':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300">Registros pendentes de lançamento, incompletos ou aguardando sincronização.</p>
+                <button onclick="resolveAllPending()" class="px-4 py-2 rounded-xl bg-[#2BAE66] text-white font-bold text-xs">Sincronizar e Resolver Todas</button>
+              </div>
+              ${APP_STATE.pendencias.length === 0 ? `
+                <div class="p-8 text-center text-sm font-bold text-[#2BAE66]">✓ Nenhuma pendência ativa! Todos os registros estão em dia.</div>
+              ` : APP_STATE.pendencias.map((p, i) => `
+                <div class="p-4 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/40 dark:bg-slate-700/40 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span class="px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 text-[10px] font-extrabold uppercase">${p.tipo}</span>
+                    <h4 class="font-bold text-sm mt-1">${p.titulo}</h4>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">${p.detalhe}</p>
+                  </div>
+                  <div class="flex gap-2">
+                    <button onclick="resolveSinglePending(${i})" class="px-3.5 py-2 rounded-xl bg-[#1557B0] text-white font-bold text-xs">Resolver Agora</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           MÓDULO 1: PACIENTES
+           --------------------------------------------------------------- */
+        case 'patients':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <input id="search-patient-input" oninput="filterPatientsList()" type="text" placeholder="Pesquisar por nome, CNS ou condição..." class="flex-1 min-w-[220px] px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+                <button onclick="openNewPatientModal()" class="px-4 py-2.5 rounded-xl bg-[#2BAE66] text-white font-bold text-xs">+ Novo Paciente</button>
+              </div>
+              <div id="patients-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            </div>
+          `;
+          filterPatientsList();
+          break;
+
+        /* ---------------------------------------------------------------
+           MÓDULO 2: DOMICÍLIOS
+           --------------------------------------------------------------- */
+        case 'households':
+          container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${APP_STATE.domicilios.map(d => `
+                <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="px-2.5 py-1 rounded-lg bg-[#E8F1FC] text-[#1557B0] font-extrabold text-xs">${d.id} • Microárea 04</span>
+                    <span class="text-xs font-bold ${d.risco === 'Alto' ? 'text-red-600' : 'text-emerald-600'}">Risco: ${d.risco}</span>
+                  </div>
+                  <h4 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">${d.logradouro}</h4>
+                  <p class="text-xs text-slate-500">Bairro: ${d.bairro} • ${d.familias} família(s) • ${d.moradores} morador(es)</p>
+                  <button onclick="openModal('Detalhes do Domicílio ${d.id}', '<p><strong>Endereço:</strong> ${d.logradouro}</p><p><strong>Situação:</strong> ${d.situacao}</p><p><strong>Famílias vinculadas:</strong> ${d.familias}</p><p><strong>Total de moradores:</strong> ${d.moradores}</p>')" class="mt-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-[#1557B0] hover:text-white text-xs font-bold transition">Ver Detalhes da Família</button>
+                </div>
+              `).join('')}
+            </div>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           MÓDULO 3: CADASTRO DOMICILIAR
+           --------------------------------------------------------------- */
+        case 'household-reg':
+          container.innerHTML = `
+            <form onsubmit="submitHouseholdReg(event)" class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4 max-w-2xl mx-auto">
+              <h3 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">Novo Cadastro Domiciliar / Territorial</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-bold mb-1">Logradouro e Número *</label>
+                  <input id="hh-address" type="text" required placeholder="Ex: Rua Eça de Queiroz, 210" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Nº de Famílias *</label>
+                  <input id="hh-families" type="number" min="1" value="1" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Nº de Moradores *</label>
+                  <input id="hh-members" type="number" min="1" value="3" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Tipo de Imóvel *</label>
+                  <select class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+                    <option>Domicílio</option><option>Comércio</option><option>Ponto Estratégico</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Classificação de Risco *</label>
+                  <select id="hh-risk" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+                    <option value="Baixo">Baixo</option><option value="Médio">Médio</option><option value="Alto">Alto</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" class="w-full py-3.5 rounded-xl bg-[#2BAE66] hover:bg-emerald-700 text-white font-bold text-sm transition">Salvar Cadastro Domiciliar</button>
+            </form>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           MÓDULO 4: FICHA DE VISITA DOMICILIAR
+           --------------------------------------------------------------- */
+        case 'visit-form':
+          container.innerHTML = `
+            <form onsubmit="submitVisitForm(event)" class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4 max-w-2xl mx-auto">
+              <h3 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">Registrar Ficha de Visita Domiciliar</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-bold mb-1">Cidadão Visitado *</label>
+                  <select id="vf-patient" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+                    ${APP_STATE.pacientes.map(p => `<option value="${p.nome}">${p.nome} (${p.condicoes.join(', ')})</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Turno *</label>
+                  <select id="vf-shift" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+                    <option>Manhã</option><option>Tarde</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Desfecho da Visita *</label>
+                  <select id="vf-outcome" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+                    <option value="Visita Realizada">Visita Realizada</option>
+                    <option value="Ausente no Domicílio">Ausente no Domicílio</option>
+                    <option value="Visita Recusada">Visita Recusada</option>
+                  </select>
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-bold mb-1">Motivo / Acompanhamento *</label>
+                  <select id="vf-reason" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm">
+                    <option>Acompanhamento de Hipertensão / Diabetes</option>
+                    <option>Acompanhamento de Gestante / Puérpera</option>
+                    <option>Puericultura / Saúde da Criança</option>
+                    <option>Pessoa Acamada / Domiciliada</option>
+                    <option>Atualização Cadastral / Busca Ativa</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" class="w-full py-3.5 rounded-xl bg-[#1557B0] hover:bg-[#0E3A5D] text-white font-bold text-sm transition">Registrar Visita Domiciliar</button>
+            </form>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           MÓDULO 5: CONTROLE DE VISITAS
+           --------------------------------------------------------------- */
+        case 'visits-control':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+              <div class="flex flex-wrap gap-2">
+                ${['Todas', 'Realizada', 'Pendente', 'Agendada', 'Cancelada'].map(st => `
+                  <button onclick="renderVisitsControlList('${st}')" class="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-[#1557B0] hover:text-white text-xs font-bold transition">${st}</button>
+                `).join('')}
+              </div>
+              <div id="visits-control-list" class="space-y-3"></div>
+            </div>
+          `;
+          renderVisitsControlList('Todas');
+          break;
+
+        /* ---------------------------------------------------------------
+           MÓDULO 6: RELATÓRIOS
+           --------------------------------------------------------------- */
+        case 'reports':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 space-y-5">
+              <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-4">
+                <div>
+                  <h3 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">Relatório Consolidado de Produção — Microárea 04</h3>
+                  <p class="text-xs text-slate-500">Unidade: Clínica da Família Pantanal Sossego • Equipe ESF Eça de Queiroz</p>
+                </div>
+                <button onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-[#1557B0] text-white font-bold text-xs no-print">🖨️ Imprimir / Salvar PDF</button>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50"><p class="text-xs text-slate-500">Cadastros</p><p class="text-2xl font-extrabold">${APP_STATE.stats.cadastros}</p></div>
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50"><p class="text-xs text-slate-500">Visitas</p><p class="text-2xl font-extrabold">${APP_STATE.stats.visitas}</p></div>
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50"><p class="text-xs text-slate-500">Famílias</p><p class="text-2xl font-extrabold">${APP_STATE.stats.familias}</p></div>
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50"><p class="text-xs text-slate-500">Acompanhamentos</p><p class="text-2xl font-extrabold">${APP_STATE.stats.acompanhamentos}</p></div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                      <th class="p-3 rounded-tl-xl">Protocolo</th><th class="p-3">Cidadão</th><th class="p-3">Data</th><th class="p-3">Motivo</th><th class="p-3 rounded-tr-xl">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${APP_STATE.visitas.map(v => `
+                      <tr class="border-b border-slate-100 dark:border-slate-700">
+                        <td class="p-3 font-bold">${v.id}</td><td class="p-3">${v.cidadao}</td><td class="p-3">${v.data}</td><td class="p-3">${v.motivo}</td><td class="p-3 font-bold">${v.status}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           MÓDULO 7: INCONSISTÊNCIAS CADASTRAIS
+           --------------------------------------------------------------- */
+        case 'inconsistencies':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+              <h3 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">Inconsistências Detectadas na Base Territorial</h3>
+              ${APP_STATE.inconsistencias.map((inc, idx) => `
+                <div class="p-4 rounded-2xl border ${inc.resolvido ? 'border-emerald-200 bg-emerald-50/40' : 'border-red-200 bg-red-50/40'} dark:bg-slate-700/40 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span class="text-xs font-extrabold ${inc.resolvido ? 'text-emerald-600' : 'text-red-600'}">${inc.id} • ${inc.campo}</span>
+                    <h4 class="font-bold text-sm mt-0.5">${inc.paciente}</h4>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">${inc.descricao}</p>
+                  </div>
+                  ${inc.resolvido
+                    ? `<span class="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold">✓ Corrigida</span>`
+                    : `<button onclick="APP_STATE.inconsistencias[${idx}].resolvido=true; showToast('Inconsistência corrigida e validada!', 'success'); renderSubscreenContent('inconsistencies');" class="px-4 py-2 rounded-xl bg-[#1557B0] text-white text-xs font-bold">Revisar e Corrigir</button>`
+                  }
+                </div>
+              `).join('')}
+            </div>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           MÓDULO 8: ROTA DE VISITAS
+           --------------------------------------------------------------- */
+        case 'route':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+              <h3 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">Roteiro Otimizado do Dia — Microárea 04</h3>
+              <div class="space-y-2.5">
+                ${[
+                  { ordem: '1ª Parada (08:30)', rua: 'Rua Eça de Queiroz, 112', familia: 'Família Silva (Hipertensão/Diabetes)', done: true },
+                  { ordem: '2ª Parada (09:30)', rua: 'Rua Eça de Queiroz, 145', familia: 'Família Pereira (Atualização CNS)', done: false },
+                  { ordem: '3ª Parada (10:30)', rua: 'Travessa das Acácias, 34', familia: 'Família Souza (Gestante - Pré-natal)', done: true },
+                  { ordem: '4ª Parada (14:00)', rua: 'Rua José de Alencar, 201', familia: 'Família Lima (Paciente Acamada - Curativo)', done: false }
+                ].map(r => `
+                  <label class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 cursor-pointer">
+                    <div class="flex items-center gap-3">
+                      <input type="checkbox" ${r.done ? 'checked' : ''} onchange="showToast('Status da rota atualizado!', 'info')" class="w-5 h-5 rounded text-[#2BAE66]" />
+                      <div>
+                        <span class="text-[11px] font-bold text-[#1557B0]">${r.ordem}</span>
+                        <p class="font-bold text-sm">${r.rua}</p>
+                        <p class="text-xs text-slate-500">${r.familia}</p>
+                      </div>
+                    </div>
+                    <span class="text-lg">📍</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           MÓDULO 9: SINCRONIZAÇÃO
+           --------------------------------------------------------------- */
+        case 'sync':
+          const pendingSyncItems = APP_STATE.pendencias.filter(p => p.tipo === 'Sincronização');
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 space-y-5 text-center max-w-2xl mx-auto">
+              <div class="w-16 h-16 rounded-full bg-[#E8F1FC] text-[#1557B0] flex items-center justify-center text-3xl mx-auto">🔄</div>
+              <div>
+                <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold">● CONEXÃO ESTÁVEL COM SERVIDOR E-SUS APS</span>
+                <h3 class="text-lg font-extrabold text-[#0E3A5D] dark:text-white mt-3">Central de Sincronização</h3>
+                <p class="text-xs text-slate-500 mt-1">Registros aguardando envio: <strong>${pendingSyncItems.length}</strong> • Transmitidos hoje: <strong>${APP_STATE.periodData['DIÁRIO'].completed}</strong></p>
+              </div>
+              <button onclick="executeSyncNow()" class="w-full py-3.5 rounded-xl bg-[#2BAE66] hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition">
+                SINCRONIZAR AGORA
+              </button>
+            </div>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           MÓDULOS 10 A 15 (LESÕES, MEDICAMENTOS, PROCEDIMENTOS, CONSUMO, COLETIVAS, AGENDA)
+           --------------------------------------------------------------- */
+        case 'lesions':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+              <h3 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">Acompanhamento de Lesões e Curativos</h3>
+              ${APP_STATE.lesoes.map(l => `
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                  <div class="flex justify-between text-xs font-bold text-[#1557B0]"><span>${l.paciente}</span><span>${l.data}</span></div>
+                  <p class="font-bold text-sm mt-1">Localização: ${l.local}</p>
+                  <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Conduta: ${l.conduta}</p>
+                  <p class="text-xs font-bold text-[#2BAE66] mt-1">Evolução: ${l.evolucao}</p>
+                </div>
+              `).join('')}
+              <form onsubmit="event.preventDefault(); APP_STATE.lesoes.push({id:'L0'+(APP_STATE.lesoes.length+1), paciente: document.getElementById('les-pac').value, local: document.getElementById('les-loc').value, data:'25/11/2026', conduta: document.getElementById('les-cond').value, evolucao:'Em acompanhamento'}); showToast('Evolução de lesão salva!', 'success'); renderSubscreenContent('lesions');" class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                <input id="les-pac" required placeholder="Nome do paciente" class="px-3 py-2 rounded-xl border dark:bg-slate-700 text-xs" />
+                <input id="les-loc" required placeholder="Local/Estágio da lesão" class="px-3 py-2 rounded-xl border dark:bg-slate-700 text-xs" />
+                <button type="submit" class="px-4 py-2 rounded-xl bg-[#1557B0] text-white font-bold text-xs">+ Registrar Evolução</button>
+                <input id="les-cond" required placeholder="Conduta / Cobertura utilizada" class="sm:col-span-3 px-3 py-2 rounded-xl border dark:bg-slate-700 text-xs" />
+              </form>
+            </div>
+          `;
+          break;
+
+        case 'medications':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+              <h3 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">Controle de Medicamentos de Uso Contínuo</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                ${APP_STATE.medicamentos.map(m => `
+                  <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                    <p class="text-xs font-bold text-[#1557B0]">${m.paciente}</p>
+                    <h4 class="font-extrabold text-sm mt-0.5">💊 ${m.farmaco}</h4>
+                    <p class="text-xs text-slate-500 mt-1">Posologia: ${m.posologia}</p>
+                    <span class="inline-block mt-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Adesão: ${m.adesao}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+          break;
+
+        case 'procedures':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+              <h3 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">Ficha de Procedimentos Individuais</h3>
+              <form onsubmit="event.preventDefault(); APP_STATE.procedimentos.unshift({id:'PR'+Date.now(), paciente: document.getElementById('pr-pac').value, tipo: document.getElementById('pr-tipo').value, valor: document.getElementById('pr-val').value, data:'25/11/2026'}); showToast('Procedimento registrado!', 'success'); renderSubscreenContent('procedures');" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <select id="pr-pac" class="px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs">${APP_STATE.pacientes.map(p => `<option>${p.nome}</option>`).join('')}</select>
+                <select id="pr-tipo" class="px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs">
+                  <option>Aferição de Pressão Arterial</option><option>Glicemia Capilar</option><option>Antropometria (Peso/Altura)</option><option>Aferição de Temperatura</option>
+                </select>
+                <input id="pr-val" required placeholder="Resultado (ex: 120x80 mmHg)" class="px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs" />
+                <button type="submit" class="px-4 py-2.5 rounded-xl bg-[#2BAE66] text-white font-bold text-xs">Salvar Lançamento</button>
+              </form>
+              <div class="space-y-2 pt-2">
+                ${APP_STATE.procedimentos.map(pr => `
+                  <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/50 flex justify-between items-center text-xs">
+                    <div><strong>${pr.paciente}</strong> — ${pr.tipo}</div>
+                    <div class="font-extrabold text-[#1557B0]">${pr.valor} (${pr.data})</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+          break;
+
+        case 'food-intake':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+              <h3 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">Marcadores de Consumo Alimentar</h3>
+              <form onsubmit="event.preventDefault(); APP_STATE.consumoAlimentar.unshift({id:'CA'+Date.now(), paciente: document.getElementById('ca-pac').value, faixa: document.getElementById('ca-faixa').value, resultado: document.getElementById('ca-res').value, data:'25/11/2026'}); showToast('Ficha de consumo alimentar salva!', 'success'); renderSubscreenContent('food-intake');" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input id="ca-pac" required placeholder="Nome do cidadão" class="px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs" />
+                <select id="ca-faixa" class="px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs">
+                  <option>Crianças menores de 6 meses</option><option>Crianças de 6 a 23 meses</option><option>Crianças com 2 anos ou mais, Adolescentes, Adultos e Gestantes</option>
+                </select>
+                <button type="submit" class="px-4 py-2.5 rounded-xl bg-[#1557B0] text-white font-bold text-xs">Registrar Avaliação</button>
+                <input id="ca-res" required placeholder="Observação alimentar (ex: Consumo de frutas/verduras adequado)" class="sm:col-span-3 px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs" />
+              </form>
+              ${APP_STATE.consumoAlimentar.map(c => `
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50 text-xs">
+                  <p class="font-bold text-[#2BAE66]">${c.paciente} • ${c.data}</p>
+                  <p class="text-slate-500 mt-0.5">${c.faixa}</p>
+                  <p class="mt-1 font-medium">${c.resultado}</p>
+                </div>
+              `).join('')}
+            </div>
+          `;
+          break;
+
+        case 'collective':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+              <h3 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">Ficha de Atividades Coletivas</h3>
+              <form onsubmit="event.preventDefault(); APP_STATE.atividadesColetivas.unshift({id:'AC'+Date.now(), tema: document.getElementById('ac-tema').value, local: document.getElementById('ac-local').value, participantes: document.getElementById('ac-part').value, data:'25/11/2026'}); showToast('Atividade coletiva registrada!', 'success'); renderSubscreenContent('collective');" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <input id="ac-tema" required placeholder="Tema da atividade/grupo" class="px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs" />
+                <input id="ac-local" required value="Clínica da Família Pantanal Sossego" class="px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs" />
+                <input id="ac-part" type="number" min="1" required placeholder="Nº Participantes" class="px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs" />
+                <button type="submit" class="px-4 py-2.5 rounded-xl bg-[#2BAE66] text-white font-bold text-xs">+ Registrar Atividade</button>
+              </form>
+              ${APP_STATE.atividadesColetivas.map(a => `
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50 flex justify-between items-center text-xs">
+                  <div><p class="font-bold text-sm">${a.tema}</p><p class="text-slate-500">${a.local} • ${a.data}</p></div>
+                  <span class="px-3 py-1 rounded-full bg-[#E8F1FC] text-[#1557B0] font-extrabold">${a.participantes} participantes</span>
+                </div>
+              `).join('')}
+            </div>
+          `;
+          break;
+
+        case 'agenda':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+              <h3 class="font-extrabold text-base text-[#0E3A5D] dark:text-white">Agenda de Compromissos e Visitas Programadas</h3>
+              <form onsubmit="event.preventDefault(); APP_STATE.agenda.push({id:'AG'+Date.now(), data: document.getElementById('ag-data').value, hora: document.getElementById('ag-hora').value, titulo: document.getElementById('ag-tit').value, tipo:'Programado'}); showToast('Evento adicionado à agenda!', 'success'); renderSubscreenContent('agenda');" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <input id="ag-data" required value="28/11/2026" class="px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs" />
+                <input id="ag-hora" required value="09:30" class="px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs" />
+                <input id="ag-tit" required placeholder="Descrição do compromisso" class="px-3 py-2.5 rounded-xl border dark:bg-slate-700 text-xs" />
+                <button type="submit" class="px-4 py-2.5 rounded-xl bg-[#1557B0] text-white font-bold text-xs">+ Agendar</button>
+              </form>
+              <div class="space-y-2.5">
+                ${APP_STATE.agenda.map(ag => `
+                  <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 flex items-center justify-between">
+                    <div>
+                      <span class="text-xs font-extrabold text-[#1557B0]">📅 ${ag.data} às ${ag.hora}</span>
+                      <p class="font-bold text-sm mt-0.5">${ag.titulo}</p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-lg bg-blue-100 text-[#0E3A5D] text-xs font-bold">${ag.tipo}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           TELA NOTIFICAÇÕES (ÍCONE SINO DO CABEÇALHO)
+           --------------------------------------------------------------- */
+        case 'notifications':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-3">
+              <div class="flex justify-between items-center pb-2">
+                <span class="text-xs text-slate-500">Clique em uma notificação para acessar o módulo correspondente.</span>
+                <button onclick="APP_STATE.notificacoes.forEach(n=>n.lida=true); updateBadges(); renderSubscreenContent('notifications');" class="text-xs font-bold text-[#1557B0] hover:underline">Marcar todas como lidas</button>
+              </div>
+              ${APP_STATE.notificacoes.map((n, idx) => `
+                <div onclick="APP_STATE.notificacoes[${idx}].lida=true; updateBadges(); navigateMain('${n.destino}');" class="cursor-pointer p-4 rounded-2xl border ${n.lida ? 'border-slate-200 bg-slate-50/50 opacity-75' : 'border-blue-200 bg-[#E8F1FC]/60'} dark:bg-slate-700/50 flex items-start justify-between gap-3 hover:shadow-xs transition">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      ${!n.lida ? '<span class="w-2.5 h-2.5 rounded-full bg-[#2BAE66]"></span>' : ''}
+                      <h4 class="font-bold text-sm">${n.titulo}</h4>
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">${n.texto}</p>
+                  </div>
+                  <span class="text-xs font-bold text-[#1557B0]">Abrir →</span>
+                </div>
+              `).join('')}
+            </div>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           TELA MENSAGENS (ÍCONE ENVELOPE DO CABEÇALHO)
+           --------------------------------------------------------------- */
+        case 'messages':
+          container.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-700 space-y-3">
+              <h3 class="font-extrabold text-sm text-[#0E3A5D] dark:text-white uppercase">Caixa de Entrada Institucional</h3>
+              ${APP_STATE.mensagens.map((m, idx) => `
+                <div onclick="APP_STATE.mensagens[${idx}].lida=true; updateBadges(); openModal('${m.assunto}', '<p class=\\'text-xs text-slate-500 mb-2\\'><strong>De:</strong> ${m.remetente} • ${m.data}</p><p class=\\'leading-relaxed\\'>${m.corpo}</p>'); renderSubscreenContent('messages');" class="cursor-pointer p-4 rounded-2xl border ${m.lida ? 'border-slate-200 bg-slate-50/50' : 'border-amber-200 bg-amber-50/40'} dark:bg-slate-700/50 flex items-center justify-between gap-3">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${m.lida ? 'bg-slate-200 text-slate-700' : 'bg-amber-400 text-slate-900'}">${m.lida ? 'LIDA' : 'NÃO LIDA'}</span>
+                      <span class="text-xs font-bold text-[#1557B0]">${m.remetente}</span>
+                    </div>
+                    <h4 class="font-bold text-sm mt-1">${m.assunto}</h4>
+                    <p class="text-xs text-slate-500 mt-0.5">${m.data}</p>
+                  </div>
+                  <span class="text-xs font-bold text-[#1557B0]">Ler mensagem →</span>
+                </div>
+              `).join('')}
+            </div>
+          `;
+          break;
+
+        /* ---------------------------------------------------------------
+           TELA CONFIGURAÇÕES (TODAS AS 8 CATEGORIAS DO RELATÓRIO)
+           --------------------------------------------------------------- */
+        case 'settings':
+          container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- 1. Ajustes -->
+              <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 space-y-3">
+                <h4 class="font-extrabold text-sm text-[#1557B0] uppercase">1. Ajustes</h4>
+                <label class="flex items-center justify-between text-xs font-bold cursor-pointer">
+                  <span>Som de feedback do sistema</span>
+                  <input type="checkbox" ${APP_STATE.settings.sound ? 'checked' : ''} onchange="APP_STATE.settings.sound=this.checked; showToast('Preferência de som atualizada.', 'info')" class="w-4 h-4 rounded text-[#1557B0]" />
+                </label>
+                <div class="flex items-center justify-between text-xs font-bold">
+                  <span>Tamanho do Texto</span>
+                  <select onchange="changeTextSize(this.value)" class="px-2.5 py-1.5 rounded-lg border dark:bg-slate-700">
+                    <option value="small" ${APP_STATE.settings.textSize === 'small' ? 'selected' : ''}>Pequeno</option>
+                    <option value="normal" ${APP_STATE.settings.textSize === 'normal' ? 'selected' : ''}>Padrão</option>
+                    <option value="large" ${APP_STATE.settings.textSize === 'large' ? 'selected' : ''}>Grande</option>
+                  </select>
+                </div>
+                <label class="flex items-center justify-between text-xs font-bold cursor-pointer">
+                  <span>Modo Noturno</span>
+                  <input type="checkbox" ${APP_STATE.settings.darkMode ? 'checked' : ''} onchange="toggleDarkMode(this.checked)" class="w-4 h-4 rounded text-[#1557B0]" />
+                </label>
+              </div>
+
+              <!-- 2. Notificação -->
+              <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 space-y-3">
+                <h4 class="font-extrabold text-sm text-[#1557B0] uppercase">2. Notificação</h4>
+                <label class="flex items-center justify-between text-xs font-bold cursor-pointer">
+                  <span>Alertas de Visitas Agendadas</span>
+                  <input type="checkbox" checked onchange="showToast('Configuração de alerta salva.', 'info')" class="w-4 h-4 rounded" />
+                </label>
+                <label class="flex items-center justify-between text-xs font-bold cursor-pointer">
+                  <span>Avisos de Pendência de Sincronização</span>
+                  <input type="checkbox" checked onchange="showToast('Configuração de sincronização salva.', 'info')" class="w-4 h-4 rounded" />
+                </label>
+              </div>
+
+              <!-- 3. Perfil -->
+              <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 space-y-3">
+                <h4 class="font-extrabold text-sm text-[#1557B0] uppercase">3. Perfil</h4>
+                <p class="text-xs text-slate-600 dark:text-slate-300">Agente Comunitário - Unilasalle • Microárea 04</p>
+                <button onclick="navigateMain('profile')" class="px-4 py-2 rounded-xl bg-[#E8F1FC] text-[#1557B0] font-bold text-xs">Visualizar Dados Completos do Perfil</button>
+              </div>
+
+              <!-- 4. Segurança -->
+              <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 space-y-3">
+                <h4 class="font-extrabold text-sm text-[#1557B0] uppercase">4. Segurança</h4>
+                <p class="text-xs text-slate-600 dark:text-slate-300">Gerencie sua senha de acesso institucional.</p>
+                <button onclick="openChangePasswordModal()" class="px-4 py-2 rounded-xl bg-[#1557B0] text-white font-bold text-xs">Mudar Senha</button>
+              </div>
+
+              <!-- 5. Conta -->
+              <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 space-y-3">
+                <h4 class="font-extrabold text-sm text-[#1557B0] uppercase">5. Conta</h4>
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="showToast('Backup local criptografado gerado com sucesso!', 'success')" class="px-3.5 py-2 rounded-xl bg-[#2BAE66] text-white font-bold text-xs">Realizar Backup Simulado</button>
+                  <button onclick="openDeleteAccountStep1()" class="px-3.5 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold text-xs">Deletar Conta</button>
+                </div>
+              </div>
+
+              <!-- 6. Suporte -->
+              <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 space-y-3">
+                <h4 class="font-extrabold text-sm text-[#1557B0] uppercase">6. Suporte</h4>
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="openModal('Como Usar o CONECTA ACS', '<p>1. Acompanhe seus indicadores no Dashboard.<br>2. Utilize o Assistente Virtual Consultor para dúvidas rápidas.<br>3. Registre visitas e cadastros nos 15 módulos e clique em Sincronizar Agora.</p>')" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold">Como usar</button>
+                  <button onclick="openModal('Perguntas Frequentes (FAQ)', '<p><strong>Como sincronizar?</strong> Acesse o módulo Sincronização e clique em Sincronizar Agora.<br><strong>Onde ver gráficos?</strong> Clique em Ver Gráficos no Dashboard.</p>')" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold">FAQ</button>
+                  <button onclick="openModal('Contato Institucional', '<p>Suporte Técnico Atenção Básica — Duque de Caxias<br>E-mail: suporte.acs@saude.gov.br<br>Unidade: Clínica da Família Pantanal Sossego</p>')" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold">Contato</button>
+                  <button onclick="openReportProblemModal()" class="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-900 text-xs font-bold">Reportar Problema</button>
+                </div>
+              </div>
+
+              <!-- 7. Privacidade -->
+              <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 space-y-3">
+                <h4 class="font-extrabold text-sm text-[#1557B0] uppercase">7. Privacidade</h4>
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="openModal('Política de Privacidade', '<p>Os dados operacionais registrados no CONECTA ACS seguem rigorosamente a Lei Geral de Proteção de Dados (Lei nº 13.709/2018) e as normas de sigilo do SUS.</p>')" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold">Política</button>
+                  <button onclick="openModal('Termos de Uso', '<p>Plataforma de uso exclusivo para apoio ao registro das atividades dos Agentes Comunitários de Saúde vinculados à unidade.</p>')" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold">Termos</button>
+                  <button onclick="openModal('Dados e LGPD', '<p>Todos os registros locais são vinculados à Equipe ESF Eça de Queiroz (Microárea 04) com rastreabilidade auditável.</p>')" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold">Dados</button>
+                </div>
+              </div>
+
+              <!-- 8. Sair -->
+              <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+                <h4 class="font-extrabold text-sm text-red-600 uppercase">8. Encerrar Sessão</h4>
+                <button onclick="logoutSystem()" class="mt-3 w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase">SAIR DA CONTA</button>
+              </div>
+            </div>
+          `;
+          break;
+      }
+    }
+
+    /* =====================================================================
+       11. AÇÕES INTERATIVAS DOS MÓDULOS E CONFIGURAÇÕES
+       ===================================================================== */
+    function filterPatientsList() {
+      const q = (document.getElementById('search-patient-input')?.value || '').toLowerCase();
+      const list = APP_STATE.pacientes.filter(p =>
+        p.nome.toLowerCase().includes(q) ||
+        p.cns.includes(q) ||
+        p.condicoes.join(' ').toLowerCase().includes(q)
+      );
+      const container = document.getElementById('patients-list-container');
+      if (!container) return;
+      container.innerHTML = list.map(p => `
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 flex items-start justify-between gap-2">
+          <div>
+            <h4 class="font-bold text-sm text-[#0E3A5D] dark:text-white">${p.nome} (${p.idade} anos)</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">CNS: ${p.cns} • ${p.endereco}</p>
+            <div class="flex flex-wrap gap-1 mt-2">
+              ${p.condicoes.map(c => `<span class="px-2 py-0.5 rounded-md bg-[#E8F1FC] text-[#1557B0] text-[10px] font-bold">${c}</span>`).join('')}
+            </div>
+          </div>
+          <button onclick="openModal('Prontuário Resumido', '<p><strong>Nome:</strong> ${p.nome}</p><p><strong>CNS:</strong> ${p.cns}</p><p><strong>Idade:</strong> ${p.idade} anos</p><p><strong>Endereço:</strong> ${p.endereco}</p><p><strong>Condições:</strong> ${p.condicoes.join(', ')}</p>')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border text-xs font-bold">Detalhes</button>
+        </div>
+      `).join('');
+    }
+
+    function openNewPatientModal() {
+      openModal(
+        'Cadastrar Novo Cidadão',
+        `<form id="new-pat-form" class="space-y-3">
+          <div><label class="block text-xs font-bold mb-1">Nome Completo *</label><input id="np-name" required class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700 text-sm" /></div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="block text-xs font-bold mb-1">Idade *</label><input id="np-age" type="number" required class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700 text-sm" /></div>
+            <div><label class="block text-xs font-bold mb-1">CNS (15 dígitos) *</label><input id="np-cns" required value="700005554443332" class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700 text-sm" /></div>
+          </div>
+          <div><label class="block text-xs font-bold mb-1">Endereço *</label><input id="np-addr" required value="Rua Eça de Queiroz, 180" class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700 text-sm" /></div>
+          <div><label class="block text-xs font-bold mb-1">Condição de Saúde</label><input id="np-cond" value="Acompanhamento Geral" class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700 text-sm" /></div>
+        </form>`,
+        `<button onclick="saveNewPatient()" class="px-4 py-2 rounded-xl bg-[#2BAE66] text-white text-xs font-bold">Salvar Cidadão</button>`
+      );
+    }
+
+    function saveNewPatient() {
+      const nome = document.getElementById('np-name').value.trim();
+      const idade = document.getElementById('np-age').value;
+      const cns = document.getElementById('np-cns').value.trim();
+      const endereco = document.getElementById('np-addr').value.trim();
+      const cond = document.getElementById('np-cond').value.trim();
+      if (!nome || !idade) { showToast('Preencha nome e idade.', 'error'); return; }
+      APP_STATE.pacientes.unshift({ id: 'P00' + (APP_STATE.pacientes.length + 1), nome, cns, idade: Number(idade), microarea: '04', endereco, condicoes: [cond || 'Geral'], status: 'Ativo' });
+      APP_STATE.stats.cadastros++;
+      APP_STATE.periodData['DIÁRIO'].completed++;
+      closeModal();
+      filterPatientsList();
+      updateDashboardUI();
+      showToast('Cidadão cadastrado e contabilizado no Diário de Campo!', 'success');
+    }
+
+    function submitHouseholdReg(event) {
+      event.preventDefault();
+      const logradouro = document.getElementById('hh-address').value.trim();
+      const familias = Number(document.getElementById('hh-families').value);
+      const moradores = Number(document.getElementById('hh-members').value);
+      const risco = document.getElementById('hh-risk').value;
+
+      APP_STATE.domicilios.unshift({ id: 'D0' + (APP_STATE.domicilios.length + 1), logradouro, bairro: 'Pantanal', familias, moradores, situacao: 'Regular', risco });
+      APP_STATE.stats.cadastros++;
+      APP_STATE.stats.familias += familias;
+      APP_STATE.periodData['DIÁRIO'].completed++;
+      updateDashboardUI();
+      showToast('Cadastro domiciliar salvo! Indicadores atualizados.', 'success');
+      navigateMain('households');
+    }
+
+    function submitVisitForm(event) {
+      event.preventDefault();
+      const cidadao = document.getElementById('vf-patient').value;
+      const turno = document.getElementById('vf-shift').value;
+      const desfecho = document.getElementById('vf-outcome').value;
+      const motivo = document.getElementById('vf-reason').value;
+
+      APP_STATE.visitas.unshift({
+        id: 'V' + (100 + APP_STATE.visitas.length + 1),
+        cidadao,
+        data: '25/11/2026',
+        turno,
+        motivo,
+        desfecho,
+        status: desfecho === 'Visita Realizada' ? 'Realizada' : 'Cancelada'
+      });
+      APP_STATE.stats.visitas++;
+      APP_STATE.stats.acompanhamentos++;
+      APP_STATE.periodData['DIÁRIO'].completed++;
+      updateDashboardUI();
+      showToast('Visita domiciliar registrada com sucesso!', 'success');
+      navigateMain('visits-control');
+    }
+
+    function renderVisitsControlList(filterStatus) {
+      const container = document.getElementById('visits-control-list');
+      if (!container) return;
+      const list = filterStatus === 'Todas' ? APP_STATE.visitas : APP_STATE.visitas.filter(v => v.status === filterStatus);
+      container.innerHTML = list.map(v => `
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <span class="text-xs font-bold text-[#1557B0]">${v.id} • ${v.data} (${v.turno})</span>
+            <h4 class="font-bold text-sm mt-0.5">${v.cidadao}</h4>
+            <p class="text-xs text-slate-500">${v.motivo} • Desfecho: ${v.desfecho}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${v.status === 'Realizada' ? 'bg-emerald-100 text-emerald-800' : v.status === 'Pendente' ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-800'}">${v.status}</span>
+            ${v.status === 'Pendente' ? `<button onclick="completePendingVisit('${v.id}')" class="px-3 py-1.5 rounded-xl bg-[#2BAE66] text-white text-xs font-bold">Concluir</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function completePendingVisit(visitId) {
+      const v = APP_STATE.visitas.find(item => item.id === visitId);
+      if (v) {
+        v.status = 'Realizada';
+        v.desfecho = 'Visita Realizada';
+        APP_STATE.stats.visitas++;
+        APP_STATE.periodData['DIÁRIO'].completed++;
+        updateDashboardUI();
+        renderVisitsControlList('Todas');
+        showToast(`Visita ${visitId} marcada como Realizada!`, 'success');
+      }
+    }
+
+    function addNewRequest(event) {
+      event.preventDefault();
+      const tipo = document.getElementById('req-type').value;
+      const descricao = document.getElementById('req-desc').value.trim();
+      APP_STATE.solicitacoes.unshift({ id: 'SOL-2026-0' + (APP_STATE.solicitacoes.length + 1), tipo, descricao, data: '25/11/2026', status: 'Em Análise' });
+      showToast('Solicitação enviada à coordenação!', 'success');
+      renderSubscreenContent('requests');
+    }
+
+    function resolveSinglePending(idx) {
+      APP_STATE.pendencias.splice(idx, 1);
+      APP_STATE.periodData['DIÁRIO'].completed++;
+      updateDashboardUI();
+      renderSubscreenContent('pending');
+      showToast('Pendência resolvida e sincronizada!', 'success');
+    }
+
+    function resolveAllPending() {
+      const count = APP_STATE.pendencias.length;
+      APP_STATE.pendencias = [];
+      APP_STATE.periodData['DIÁRIO'].completed += count;
+      updateDashboardUI();
+      renderSubscreenContent('pending');
+      showToast('Todas as pendências foram sincronizadas com sucesso!', 'success');
+    }
+
+    function executeSyncNow() {
+      const before = APP_STATE.pendencias.filter(p => p.tipo === 'Sincronização').length;
+      APP_STATE.pendencias = APP_STATE.pendencias.filter(p => p.tipo !== 'Sincronização');
+      APP_STATE.periodData['DIÁRIO'].completed += before;
+      updateDashboardUI();
+      renderSubscreenContent('sync');
+      showToast(before > 0 ? `${before} registro(s) sincronizado(s) com sucesso!` : 'Base já está 100% sincronizada!', 'success');
+    }
+
+    /* Configurações Extras */
+    function changeTextSize(size) {
+      APP_STATE.settings.textSize = size;
+      document.documentElement.classList.remove('text-sm-mode', 'text-lg-mode');
+      if (size === 'small') document.documentElement.classList.add('text-sm-mode');
+      if (size === 'large') document.documentElement.classList.add('text-lg-mode');
+      showToast('Tamanho do texto ajustado.', 'info');
+    }
+
+    function toggleDarkMode(enabled) {
+      APP_STATE.settings.darkMode = enabled;
+      if (enabled) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+      showToast(enabled ? 'Modo Noturno ativado.' : 'Modo Claro ativado.', 'info');
+    }
+
+    function openChangePasswordModal() {
+      openModal(
+        'Alterar Senha Institucional',
+        `<div class="space-y-3">
+          <div><label class="block text-xs font-bold mb-1">Senha Atual</label><input type="password" class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700 text-sm" /></div>
+          <div><label class="block text-xs font-bold mb-1">Nova Senha</label><input type="password" class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700 text-sm" /></div>
+        </div>`,
+        `<button onclick="closeModal(); showToast('Solicitação de alteração de senha registrada!', 'success');" class="px-4 py-2 rounded-xl bg-[#1557B0] text-white text-xs font-bold">Salvar Nova Senha</button>`
+      );
+    }
+
+    function openReportProblemModal() {
+      openModal(
+        'Reportar Problema Técnico',
+        `<textarea rows="4" placeholder="Descreva o ocorrido..." class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700 text-sm"></textarea>`,
+        `<button onclick="closeModal(); showToast('Relato enviado à equipe de suporte!', 'success');" class="px-4 py-2 rounded-xl bg-[#2BAE66] text-white text-xs font-bold">Enviar Relato</button>`
+      );
+    }
+
+    function openDeleteAccountStep1() {
+      openModal(
+        'Atenção — Excluir Conta (Etapa 1 de 2)',
+        `<p class="text-sm text-red-600 font-bold">Esta ação solicita a desativação permanente do seu acesso institucional ao CONECTA ACS.</p><p class="text-xs mt-2">Deseja prosseguir para a confirmação final?</p>`,
+        `<button onclick="closeModal()" class="px-3 py-2 rounded-xl bg-slate-200 text-slate-800 text-xs font-bold">Cancelar</button>
+         <button onclick="openDeleteAccountStep2()" class="px-3 py-2 rounded-xl bg-red-600 text-white text-xs font-bold">Prosseguir</button>`
+      );
+    }
+
+    function openDeleteAccountStep2() {
+      openModal(
+        'Confirmação Definitiva (Etapa 2 de 2)',
+        `<p class="text-xs">Confirma que deseja encerrar e solicitar exclusão da conta <strong>Unilasalle</strong>?</p>`,
+        `<button onclick="closeModal()" class="px-3 py-2 rounded-xl bg-slate-200 text-slate-800 text-xs font-bold">Manter Conta</button>
+         <button onclick="closeModal(); logoutSystem(); showToast('Solicitação de exclusão registrada.', 'warning');" class="px-3 py-2 rounded-xl bg-red-700 text-white text-xs font-bold">Confirmar Exclusão</button>`
+      );
+    }
+
+    /* =====================================================================
+       12. DESENHO DE GRÁFICOS BI EM CANVAS PURO (COLUNAS, BARRAS, LINHAS, PIZZA)
+       ===================================================================== */
+    function getBIDataset() {
+      const mult = APP_STATE.biPeriod === 'Diário' ? 1 : APP_STATE.biPeriod === 'Semanal' ? 4 : APP_STATE.biPeriod === 'Mensal' ? 14 : 9;
+      return [
+        { label: 'Cadastros', value: 10 * mult, color: '#1557B0' },
+        { label: 'Visitas', value: 14 * mult, color: '#2BAE66' },
+        { label: 'Famílias', value: 8 * mult, color: '#0E3A5D' },
+        { label: 'Acompanhamentos', value: 11 * mult, color: '#3B82F6' },
+        { label: 'Pendências', value: APP_STATE.pendencias.length, color: '#F59E0B' }
+      ];
+    }
+
+    function drawBIChart() {
+      const canvas = document.getElementById('bi-canvas');
+      if (!canvas) return;
+      const parent = canvas.parentElement;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = parent.getBoundingClientRect();
+      canvas.width = (rect.width - 32) * dpr;
+      canvas.height = (rect.height - 32) * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width - 32;
+      const h = rect.height - 32;
+      ctx.clearRect(0, 0, w, h);
+
+      const data = getBIDataset();
+      const maxVal = Math.max(...data.map(d => d.value), 10);
+      const isDark = document.documentElement.classList.contains('dark');
+      const textColor = isDark ? '#E2E8F0' : '#1E293B';
+      const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)';
+
+      const type = APP_STATE.biChartType;
+
+      if (type === 'colunas') {
+        const padL = 40, padB = 34, padT = 24, padR = 20;
+        const chartW = w - padL - padR;
+        const chartH = h - padT - padB;
+        // Grid
+        ctx.strokeStyle = gridColor;
+        ctx.fillStyle = textColor;
+        ctx.font = '600 11px Inter, sans-serif';
+        for (let i = 0; i <= 4; i++) {
+          const y = padT + (chartH * i) / 4;
+          ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+          const val = Math.round(maxVal * (1 - i / 4));
+          ctx.fillText(val, 6, y + 4);
+        }
+        const barW = Math.min(48, (chartW / data.length) * 0.55);
+        data.forEach((d, i) => {
+          const slot = chartW / data.length;
+          const x = padL + i * slot + (slot - barW) / 2;
+          const barH = (d.value / maxVal) * chartH;
+          const y = padT + chartH - barH;
+          ctx.fillStyle = d.color;
+          ctx.beginPath();
+          ctx.roundRect(x, y, barW, barH, [8, 8, 0, 0]);
+          ctx.fill();
+          ctx.fillStyle = textColor;
+          ctx.textAlign = 'center';
+          ctx.fillText(d.value, x + barW / 2, y - 6);
+          ctx.fillText(d.label.slice(0, 11), x + barW / 2, h - 10);
+        });
+      } else if (type === 'barras') {
+        const padL = 105, padR = 40, padT = 16, padB = 16;
+        const chartW = w - padL - padR;
+        const chartH = h - padT - padB;
+        const rowH = chartH / data.length;
+        ctx.font = '600 11px Inter, sans-serif';
+        data.forEach((d, i) => {
+          const y = padT + i * rowH + rowH * 0.2;
+          const bh = rowH * 0.58;
+          const bw = (d.value / maxVal) * chartW;
+          ctx.fillStyle = textColor;
+          ctx.textAlign = 'right';
+          ctx.fillText(d.label, padL - 10, y + bh / 2 + 4);
+          ctx.fillStyle = d.color;
+          ctx.beginPath();
+          ctx.roundRect(padL, y, Math.max(bw, 6), bh, [0, 8, 8, 0]);
+          ctx.fill();
+          ctx.fillStyle = textColor;
+          ctx.textAlign = 'left';
+          ctx.fillText(d.value, padL + bw + 8, y + bh / 2 + 4);
+        });
+      } else if (type === 'linhas') {
+        const padL = 40, padB = 34, padT = 24, padR = 24;
+        const chartW = w - padL - padR;
+        const chartH = h - padT - padB;
+        ctx.strokeStyle = gridColor;
+        for (let i = 0; i <= 4; i++) {
+          const y = padT + (chartH * i) / 4;
+          ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+        }
+        const pts = data.map((d, i) => ({
+          x: padL + (chartW * i) / (data.length - 1),
+          y: padT + chartH - (d.value / maxVal) * chartH,
+          ...d
+        }));
+        ctx.strokeStyle = '#1557B0';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        pts.forEach((p, idx) => idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+        ctx.font = '700 11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        pts.forEach(p => {
+          ctx.fillStyle = '#2BAE66';
+          ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = textColor;
+          ctx.fillText(p.value, p.x, p.y - 10);
+          ctx.fillText(p.label.slice(0, 10), p.x, h - 10);
+        });
+      } else if (type === 'pizza') {
+        const total = data.reduce((acc, d) => acc + d.value, 0) || 1;
+        const cx = w * 0.35;
+        const cy = h * 0.5;
+        const radius = Math.min(cx - 20, cy - 16);
+        let startAngle = -Math.PI / 2;
+        data.forEach(d => {
+          const slice = (d.value / total) * Math.PI * 2;
+          ctx.fillStyle = d.color;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.arc(cx, cy, radius, startAngle, startAngle + slice);
+          ctx.closePath();
+          ctx.fill();
+          startAngle += slice;
+        });
+        // Centro rosca
+        ctx.fillStyle = isDark ? '#0f172a' : '#f8fafc';
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius * 0.52, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Legenda à direita
+        ctx.font = '600 11px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        data.forEach((d, i) => {
+          const lx = w * 0.62;
+          const ly = 32 + i * 32;
+          ctx.fillStyle = d.color;
+          ctx.fillRect(lx, ly - 9, 12, 12);
+          ctx.fillStyle = textColor;
+          ctx.fillText(`${d.label}: ${d.value}`, lx + 18, ly + 1);
+        });
+      }
+    }
+
+    function savePowerBIUrl(val) {
+      APP_STATE.biPowerBIUrl = (val || '').trim();
+      try {
+        localStorage.setItem('conecta_acs_powerbi_url_2026', APP_STATE.biPowerBIUrl);
+      } catch (err) {}
+    }
+
+    function getValidatedPowerBIUrl() {
+      const inputEl = document.getElementById('bi-powerbi-url');
+      const rawUrl = (inputEl ? inputEl.value : APP_STATE.biPowerBIUrl || '').trim();
+      if (!rawUrl.startsWith('https://')) {
+        showToast('Informe um link válido começando com https:// para o Power BI.', 'warning');
+        return null;
+      }
+      savePowerBIUrl(rawUrl);
+      return rawUrl;
+    }
+
+    function openPowerBIReport() {
+      const url = getValidatedPowerBIUrl();
+      if (!url) return;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      showToast('Abrindo relatório do Power BI em nova aba...', 'info');
+    }
+
+    function toggleEmbedPowerBI() {
+      const url = getValidatedPowerBIUrl();
+      if (!url) return;
+      APP_STATE.biPowerBIEmbedOpen = !APP_STATE.biPowerBIEmbedOpen;
+      const box = document.getElementById('bi-powerbi-embed-box');
+      const iframe = document.getElementById('bi-powerbi-iframe');
+      if (box && iframe) {
+        if (APP_STATE.biPowerBIEmbedOpen) {
+          iframe.src = url;
+          box.classList.remove('hidden');
+        } else {
+          box.classList.add('hidden');
+          iframe.src = '';
+        }
+      }
+      renderSubscreenContent('bi');
+    }
+
+    function exportBIDataCSV() {
+      const rows = [['Indicador', 'Quantidade', 'Periodo'], ...getBIDataset().map(d => [d.label, d.value, APP_STATE.biPeriod])];
+      const csv = rows.map(r => r.join(';')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `conecta-acs-bi-${APP_STATE.biPeriod.toLowerCase()}.csv`;
+      link.click();
+      showToast('Dados exportados em CSV com sucesso!', 'success');
+    }
+
+    window.addEventListener('resize', () => {
+      if (APP_STATE.activeView === 'bi') drawBIChart();
+    });
+  </script>
+</body>
+</html>
